@@ -1,136 +1,60 @@
-import { COMPANY } from "@ao/shared/constants";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
-import { IBM_Plex_Mono } from "next/font/google";
-
-import { CookieConsent } from "@/components/CookieConsent";
-import {
-  OrganizationJsonLd,
-  SoftwareApplicationJsonLd,
-  WebsiteJsonLd,
-} from "@/components/JsonLd";
-
-import { CTAButtons } from "./components/CTAButtons";
-import { Footer } from "./components/Footer";
-import { Header } from "./components/Header";
 import "./globals.css";
-import { Providers } from "./providers";
 
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ["300", "400", "500"],
-  subsets: ["latin"],
-  variable: "--font-ibm-plex-mono",
-  display: "swap",
-});
-
-const siteDescription =
-  "Run a fleet of coding agents without losing track of branches, reviews, or CI failures. Free and open source under Apache 2.0.";
+const description =
+  "AICodeRoom 是多用户、多项目、可邀请协作的 AI 软件开发工作台。";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(COMPANY.MARKETING_URL),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:43120",
+  ),
   title: {
-    default: `Run Coding Agents in Parallel | ${COMPANY.NAME}`,
-    template: `%s | ${COMPANY.NAME}`,
+    default: "AICodeRoom｜AI 软件开发协作空间",
+    template: "%s｜AICodeRoom",
   },
-  description: siteDescription,
+  description,
   keywords: [
-    "coding agents",
-    "agent orchestration",
-    "parallel execution",
-    "developer tools",
-    "AI coding",
-    "git worktrees",
-    "code automation",
-    "Claude Code",
-    "Cursor",
+    "AI 软件开发",
+    "多智能体协作",
     "Codex",
-    "agent fleet",
-    "PR automation",
+    "Claude Code",
+    "Git 工作流",
+    "代码备份",
   ],
-  authors: [{ name: `${COMPANY.NAME} Team` }],
-  creator: COMPANY.NAME,
+  authors: [{ name: "AICodeRoom" }],
+  creator: "AICodeRoom",
   openGraph: {
     type: "website",
-    locale: "en_US",
-    url: COMPANY.MARKETING_URL,
-    siteName: COMPANY.NAME,
-    title: COMPANY.NAME,
-    description: siteDescription,
+    locale: "zh_CN",
+    siteName: "AICodeRoom",
+    title: "AICodeRoom｜让一支 AI 团队在同一个代码空间里工作",
+    description,
     images: [
       {
-        url: "/og-image.png",
+        url: "/og.png",
         width: 1200,
         height: 630,
-        alt: COMPANY.NAME,
+        alt: "AICodeRoom AI 软件开发协作空间",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: COMPANY.NAME,
-    description: siteDescription,
-    images: ["/og-image.png"],
-    creator: "@aoagents",
+    title: "AICodeRoom｜AI 软件开发协作空间",
+    description,
+    images: ["/og.png"],
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-    ],
-  },
-  manifest: "/manifest.json",
+  robots: { index: false, follow: false },
+  icons: { icon: [{ url: "/aicoderoom-logo.svg", type: "image/svg+xml" }] },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`dark overscroll-none ${ibmPlexMono.variable} ${GeistSans.variable}`}
-      suppressHydrationWarning
-    >
-      <head>
-        <OrganizationJsonLd />
-        <SoftwareApplicationJsonLd />
-        <WebsiteJsonLd />
-        <link rel="preload" as="image" href="/optimized/hero-background.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/optimized/feature.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/optimized/feature2.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/optimized/feature3.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/optimized/feature4.webp" type="image/webp" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                var ua = navigator.userAgent || "";
-                document.documentElement.dataset.landingPlatform =
-                  /mac os x|macintosh/i.test(ua) ? "mac" : "other";
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body className="relative overscroll-none font-sans antialiased">
-        <Providers>
-          <Header ctaButtons={<CTAButtons />} />
-          {children}
-          <Footer />
-          <CookieConsent />
-        </Providers>
-      </body>
+    <html lang="zh-CN" className={`dark ${GeistSans.variable}`}>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

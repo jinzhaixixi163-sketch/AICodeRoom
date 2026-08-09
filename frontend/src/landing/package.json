@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 127.0.0.1 -p 43120",
     "build": "next build",
     "postbuild": "node scripts/generate-markdown-twins.mjs",
-    "start": "next start"
+    "start": "next start -H 127.0.0.1 -p 43120"
   },
   "workspaces": [
     "packages/*"

@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 // GitHub Pages serves a static export (see .github/workflows/deploy-landing.yml).
 // Features that need a Node server (rewrites, proxy.ts) are intentionally omitted.
 const config: NextConfig = {
+	allowedDevOrigins: ["127.0.0.1"],
 	output: "export",
 	reactStrictMode: true,
 	trailingSlash: true,
