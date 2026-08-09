@@ -8,13 +8,14 @@ import (
 )
 
 type usageSummaryStoreStub struct {
-	projectID  domain.ProjectID
-	rows       []domain.CompactSessionUsage
-	session    domain.SessionRecord
-	found      bool
-	incomplete bool
-	models     []domain.UsageModelAggregate
-	calls      [4]int
+	projectID     domain.ProjectID
+	rows          []domain.CompactSessionUsage
+	session       domain.SessionRecord
+	found         bool
+	incomplete    bool
+	models        []domain.UsageModelAggregate
+	projectModels []domain.UsageModelAggregate
+	calls         [5]int
 }
 
 func (s *usageSummaryStoreStub) ListCompactSessionUsage(_ context.Context, id domain.ProjectID) ([]domain.CompactSessionUsage, error) {
@@ -29,9 +30,42 @@ func (s *usageSummaryStoreStub) ListUsageModelAggregates(context.Context, domain
 	s.calls[2]++
 	return s.models, nil
 }
+func (s *usageSummaryStoreStub) ListUsageModelAggregatesByProject(_ context.Context, id domain.ProjectID) ([]domain.UsageModelAggregate, error) {
+	s.projectID, s.calls[4] = id, s.calls[4]+1
+	return s.projectModels, nil
+}
 func (s *usageSummaryStoreStub) GetUsageSessionIncomplete(context.Context, domain.SessionID) (bool, error) {
 	s.calls[3]++
 	return s.incomplete, nil
+}
+
+func TestSummaryReaderOverviewAggregatesModelsAndCoverage(t *testing.T) {
+	store := &usageSummaryStoreStub{
+		rows: []domain.CompactSessionUsage{
+			{SessionID: "used", TotalTokens: 120},
+			{SessionID: "partial", TotalTokens: 60, Incomplete: true},
+		},
+		projectModels: []domain.UsageModelAggregate{{
+			Harness: domain.HarnessCodex, ModelID: "gpt-5.6",
+			Tokens: domain.UsageTokenMetrics{InputTokens: 150, CacheReadTokens: 40, OutputTokens: 30},
+		}},
+	}
+
+	got, err := NewSummaryReader(store).Overview(context.Background(), "reverb")
+	mustNoError(t, err)
+	if got.SessionCount != 2 || got.IncompleteSessionCount != 1 {
+		t.Fatalf("coverage = %+v", got)
+	}
+	if got.Totals.InputTokens == nil || *got.Totals.InputTokens != 150 ||
+		got.Totals.OutputTokens == nil || *got.Totals.OutputTokens != 30 {
+		t.Fatalf("totals = %+v", got.Totals)
+	}
+	if len(got.Harnesses) != 1 || got.Harnesses[0].Models[0].ModelID != "gpt-5.6" {
+		t.Fatalf("harnesses = %+v", got.Harnesses)
+	}
+	if store.projectID != "reverb" || store.calls[0] != 1 || store.calls[4] != 1 {
+		t.Fatalf("store reads = %v project=%q", store.calls, store.projectID)
+	}
 }
 
 func TestSummaryReaderListCompactUsesOneBatchRead(t *testing.T) {
@@ -82,7 +116,7 @@ func TestSummaryReaderGetAggregatesModelsAndIntegrity(t *testing.T) {
 	if len(got.Harnesses) != 2 || got.Harnesses[0].Models[0].ModelID != "gpt-5.6" {
 		t.Fatalf("harnesses = %+v", got.Harnesses)
 	}
-	if store.calls != [4]int{0, 1, 1, 1} {
+	if store.calls != [5]int{0, 1, 1, 1, 0} {
 		t.Fatalf("store calls = %v", store.calls)
 	}
 }

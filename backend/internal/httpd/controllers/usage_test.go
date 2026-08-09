@@ -18,8 +18,14 @@ type fakeUsageSummaryService struct {
 	projectID domain.ProjectID
 	sessionID domain.SessionID
 	items     []domain.CompactSessionUsage
+	overview  domain.UsageOverview
 	detail    domain.SessionUsageSummary
 	err       error
+}
+
+func (f *fakeUsageSummaryService) Overview(_ context.Context, projectID domain.ProjectID) (domain.UsageOverview, error) {
+	f.projectID = projectID
+	return f.overview, f.err
 }
 
 func (f *fakeUsageSummaryService) ListCompact(_ context.Context, projectID domain.ProjectID) ([]domain.CompactSessionUsage, error) {
@@ -63,6 +69,40 @@ func TestUsageAPIListsCompactProjectUsage(t *testing.T) {
 	mustJSON(t, body, &got)
 	if len(got.Sessions) != 1 || got.Sessions[0].SessionID != "reverb-12" ||
 		got.Sessions[0].TotalTokens != 12400 || !got.Sessions[0].Incomplete {
+		t.Fatalf("response = %+v", got)
+	}
+}
+
+func TestUsageAPIShowsAggregateOverview(t *testing.T) {
+	input := int64(1000)
+	output := int64(200)
+	svc := &fakeUsageSummaryService{overview: domain.UsageOverview{
+		SessionCount: 3, IncompleteSessionCount: 1,
+		Totals:    domain.UsageMetricTotals{InputTokens: &input, OutputTokens: &output},
+		Harnesses: []domain.HarnessUsageSummary{{Harness: domain.HarnessCodex}},
+	}}
+	srv := newUsageTestServer(t, svc)
+
+	body, status, _ := doRequest(t, srv, http.MethodGet, "/api/v1/usage/overview?projectId=reverb", "")
+	if status != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", status, body)
+	}
+	if svc.projectID != "reverb" {
+		t.Fatalf("project id = %q, want reverb", svc.projectID)
+	}
+	var got struct {
+		SessionCount           int64 `json:"sessionCount"`
+		IncompleteSessionCount int64 `json:"incompleteSessionCount"`
+		Totals                 struct {
+			InputTokens int64 `json:"inputTokens"`
+		} `json:"totals"`
+		Harnesses []struct {
+			Harness string `json:"harness"`
+		} `json:"harnesses"`
+	}
+	mustJSON(t, body, &got)
+	if got.SessionCount != 3 || got.IncompleteSessionCount != 1 || got.Totals.InputTokens != 1000 ||
+		len(got.Harnesses) != 1 || got.Harnesses[0].Harness != "codex" {
 		t.Fatalf("response = %+v", got)
 	}
 }

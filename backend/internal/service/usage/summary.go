@@ -12,6 +12,7 @@ type usageSummaryStore interface {
 	GetSession(context.Context, domain.SessionID) (domain.SessionRecord, bool, error)
 	ListCompactSessionUsage(context.Context, domain.ProjectID) ([]domain.CompactSessionUsage, error)
 	ListUsageModelAggregates(context.Context, domain.SessionID) ([]domain.UsageModelAggregate, error)
+	ListUsageModelAggregatesByProject(context.Context, domain.ProjectID) ([]domain.UsageModelAggregate, error)
 	GetUsageSessionIncomplete(context.Context, domain.SessionID) (bool, error)
 }
 
@@ -27,6 +28,32 @@ func (r *SummaryReader) ListCompact(ctx context.Context, projectID domain.Projec
 		return nil, fmt.Errorf("usage summary store is unavailable")
 	}
 	return r.store.ListCompactSessionUsage(ctx, projectID)
+}
+
+// Overview returns aggregate token telemetry and coverage counts for the usage
+// dashboard. An empty project id means all projects.
+func (r *SummaryReader) Overview(ctx context.Context, projectID domain.ProjectID) (domain.UsageOverview, error) {
+	if r == nil || r.store == nil {
+		return domain.UsageOverview{}, fmt.Errorf("usage summary store is unavailable")
+	}
+	models, err := r.store.ListUsageModelAggregatesByProject(ctx, projectID)
+	if err != nil {
+		return domain.UsageOverview{}, err
+	}
+	sessions, err := r.store.ListCompactSessionUsage(ctx, projectID)
+	if err != nil {
+		return domain.UsageOverview{}, err
+	}
+	var incomplete int64
+	for _, session := range sessions {
+		if session.Incomplete {
+			incomplete++
+		}
+	}
+	return domain.UsageOverview{
+		SessionCount: int64(len(sessions)), IncompleteSessionCount: incomplete,
+		Totals: usageTotals(models), Harnesses: harnessUsageSummaries(models),
+	}, nil
 }
 
 // Get returns detailed token telemetry for one session.

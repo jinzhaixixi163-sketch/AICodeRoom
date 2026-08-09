@@ -87,8 +87,8 @@ SELECT id, project_id, num, issue_id, kind, harness,
     created_at, updated_at, display_name, first_signal_at, preview_url,
     preview_revision, cleanup_generation, runtime_launch_id,
     workspace_repo_path, terminate_on_pr_merge, diff_base_sha, diff_base_ref,
-    reviewer_harness, is_pinned, pinned_at, browser_capability_verifier,
-    session_mode, provider_conversation_id, controller_generation
+    reviewer_harness, is_pinned, pinned_at, session_mode,
+    provider_conversation_id, controller_generation, browser_capability_verifier
 FROM sessions WHERE id = ?
 `
 
@@ -125,10 +125,10 @@ func (q *Queries) GetSession(ctx context.Context, id domain.SessionID) (Session,
 		&i.ReviewerHarness,
 		&i.IsPinned,
 		&i.PinnedAt,
-		&i.BrowserCapabilityVerifier,
 		&i.SessionMode,
 		&i.ProviderConversationID,
 		&i.ControllerGeneration,
+		&i.BrowserCapabilityVerifier,
 	)
 	return i, err
 }
@@ -232,8 +232,8 @@ SELECT id, project_id, num, issue_id, kind, harness,
     created_at, updated_at, display_name, first_signal_at, preview_url,
     preview_revision, cleanup_generation, runtime_launch_id,
     workspace_repo_path, terminate_on_pr_merge, diff_base_sha, diff_base_ref,
-    reviewer_harness, is_pinned, pinned_at, browser_capability_verifier,
-    session_mode, provider_conversation_id, controller_generation
+    reviewer_harness, is_pinned, pinned_at, session_mode,
+    provider_conversation_id, controller_generation, browser_capability_verifier
 FROM sessions ORDER BY project_id, num
 `
 
@@ -276,10 +276,10 @@ func (q *Queries) ListAllSessions(ctx context.Context) ([]Session, error) {
 			&i.ReviewerHarness,
 			&i.IsPinned,
 			&i.PinnedAt,
-			&i.BrowserCapabilityVerifier,
 			&i.SessionMode,
 			&i.ProviderConversationID,
 			&i.ControllerGeneration,
+			&i.BrowserCapabilityVerifier,
 		); err != nil {
 			return nil, err
 		}
@@ -301,8 +301,8 @@ SELECT id, project_id, num, issue_id, kind, harness,
     created_at, updated_at, display_name, first_signal_at, preview_url,
     preview_revision, cleanup_generation, runtime_launch_id,
     workspace_repo_path, terminate_on_pr_merge, diff_base_sha, diff_base_ref,
-    reviewer_harness, is_pinned, pinned_at, browser_capability_verifier,
-    session_mode, provider_conversation_id, controller_generation
+    reviewer_harness, is_pinned, pinned_at, session_mode,
+    provider_conversation_id, controller_generation, browser_capability_verifier
 FROM sessions WHERE project_id = ? ORDER BY num
 `
 
@@ -345,10 +345,10 @@ func (q *Queries) ListSessionsByProject(ctx context.Context, projectID domain.Pr
 			&i.ReviewerHarness,
 			&i.IsPinned,
 			&i.PinnedAt,
-			&i.BrowserCapabilityVerifier,
 			&i.SessionMode,
 			&i.ProviderConversationID,
 			&i.ControllerGeneration,
+			&i.BrowserCapabilityVerifier,
 		); err != nil {
 			return nil, err
 		}

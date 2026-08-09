@@ -274,6 +274,7 @@ var schemaNames = map[string]string{
 	"ControllersListUsageSessionsQuery":                   "ListUsageSessionsQuery",
 	"ControllersCompactSessionUsageResponse":              "CompactSessionUsageResponse",
 	"ControllersListCompactSessionUsageResponse":          "ListCompactSessionUsageResponse",
+	"ControllersUsageOverviewResponse":                    "UsageOverviewResponse",
 	"ControllersUsageTotalsResponse":                      "UsageTotalsResponse",
 	"ControllersUsageModelResponse":                       "UsageModelResponse",
 	"ControllersUsageHarnessResponse":                     "UsageHarnessResponse",
@@ -466,6 +467,16 @@ type conversationSnapshotQuery struct {
 
 func usageOperations() []operation {
 	return []operation{
+		{
+			method: http.MethodGet, path: "/api/v1/usage/overview", id: "getUsageOverview", tag: "usage",
+			summary:    "Get aggregate token usage for the usage dashboard",
+			pathParams: []any{controllers.ListUsageSessionsQuery{}},
+			resps: []respUnit{
+				{http.StatusOK, controllers.UsageOverviewResponse{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+				{http.StatusNotImplemented, envelope.APIError{}},
+			},
+		},
 		{
 			method: http.MethodGet, path: "/api/v1/usage/sessions", id: "listCompactSessionUsage", tag: "usage",
 			summary:    "List compact token usage for session cards",

@@ -14,6 +14,7 @@ import (
 // UsageSummaryService is the controller-facing compact usage read contract.
 type UsageSummaryService interface {
 	ListCompact(context.Context, domain.ProjectID) ([]domain.CompactSessionUsage, error)
+	Overview(context.Context, domain.ProjectID) (domain.UsageOverview, error)
 	Get(context.Context, domain.SessionID) (domain.SessionUsageSummary, error)
 }
 
@@ -24,8 +25,22 @@ type UsageController struct {
 
 // Register mounts usage routes on the supplied router.
 func (c *UsageController) Register(r chi.Router) {
+	r.Get("/usage/overview", c.overview)
 	r.Get("/usage/sessions", c.listSessions)
 	r.Get("/usage/sessions/{sessionId}", c.getSession)
+}
+
+func (c *UsageController) overview(w http.ResponseWriter, r *http.Request) {
+	if c.Svc == nil {
+		apispec.NotImplemented(w, r, "GET", "/api/v1/usage/overview")
+		return
+	}
+	summary, err := c.Svc.Overview(r.Context(), domain.ProjectID(r.URL.Query().Get("projectId")))
+	if err != nil {
+		envelope.WriteError(w, r, err)
+		return
+	}
+	envelope.WriteJSON(w, http.StatusOK, usageOverviewResponse(summary))
 }
 
 func (c *UsageController) listSessions(w http.ResponseWriter, r *http.Request) {
@@ -61,8 +76,22 @@ func (c *UsageController) getSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func sessionUsageResponse(summary domain.SessionUsageSummary) SessionUsageResponse {
-	harnesses := make([]UsageHarnessResponse, 0, len(summary.Harnesses))
-	for _, harness := range summary.Harnesses {
+	return SessionUsageResponse{
+		SessionID: summary.SessionID, Incomplete: summary.Incomplete,
+		Totals: usageTotalsResponse(summary.Totals), Harnesses: usageHarnessesResponse(summary.Harnesses),
+	}
+}
+
+func usageOverviewResponse(summary domain.UsageOverview) UsageOverviewResponse {
+	return UsageOverviewResponse{
+		SessionCount: summary.SessionCount, IncompleteSessionCount: summary.IncompleteSessionCount,
+		Totals: usageTotalsResponse(summary.Totals), Harnesses: usageHarnessesResponse(summary.Harnesses),
+	}
+}
+
+func usageHarnessesResponse(summaries []domain.HarnessUsageSummary) []UsageHarnessResponse {
+	harnesses := make([]UsageHarnessResponse, 0, len(summaries))
+	for _, harness := range summaries {
 		models := make([]UsageModelResponse, 0, len(harness.Models))
 		for _, model := range harness.Models {
 			models = append(models, UsageModelResponse{
@@ -73,10 +102,7 @@ func sessionUsageResponse(summary domain.SessionUsageSummary) SessionUsageRespon
 			Harness: string(harness.Harness), Totals: usageTotalsResponse(harness.Totals), Models: models,
 		})
 	}
-	return SessionUsageResponse{
-		SessionID: summary.SessionID, Incomplete: summary.Incomplete,
-		Totals: usageTotalsResponse(summary.Totals), Harnesses: harnesses,
-	}
+	return harnesses
 }
 
 func usageTotalsResponse(totals domain.UsageMetricTotals) UsageTotalsResponse {

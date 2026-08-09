@@ -174,6 +174,15 @@ type SessionUsageSummary struct {
 	Harnesses  []HarnessUsageSummary
 }
 
+// UsageOverview is the aggregate token dashboard across all observed sessions,
+// optionally scoped to one project by the service reader.
+type UsageOverview struct {
+	SessionCount           int64
+	IncompleteSessionCount int64
+	Totals                 UsageMetricTotals
+	Harnesses              []HarnessUsageSummary
+}
+
 // SourceCursorState is the durable source state to commit after parsing a
 // chunk. ApplyUsageChunk writes it atomically with the emitted events.
 type SourceCursorState struct {

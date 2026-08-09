@@ -13,6 +13,70 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/domain"
 )
 
+const aggregateUsageByProjectHarnessModel = `-- name: AggregateUsageByProjectHarnessModel :many
+SELECT
+    ub.harness,
+    mue.model_id,
+    CAST(SUM(mue.input_tokens) AS INTEGER) AS input_tokens,
+    CAST(SUM(mue.uncached_input_tokens) AS INTEGER) AS uncached_input_tokens,
+    CAST(SUM(mue.cache_read_tokens) AS INTEGER) AS cache_read_tokens,
+    CAST(SUM(mue.cache_write_tokens) AS INTEGER) AS cache_write_tokens,
+    CAST(SUM(mue.output_tokens) AS INTEGER) AS output_tokens,
+    CAST(COALESCE(SUM(mue.reasoning_tokens), 0) AS INTEGER) AS reasoning_tokens,
+    COUNT(mue.reasoning_tokens) AS reasoning_event_count
+FROM model_usage_events mue
+JOIN usage_bindings ub ON ub.id = mue.binding_id
+JOIN sessions s ON s.id = ub.session_id
+WHERE (?1 = '' OR s.project_id = ?1)
+GROUP BY ub.harness, mue.model_id
+ORDER BY SUM(mue.input_tokens + mue.output_tokens) DESC, ub.harness, mue.model_id
+`
+
+type AggregateUsageByProjectHarnessModelRow struct {
+	Harness             domain.AgentHarness
+	ModelID             string
+	InputTokens         int64
+	UncachedInputTokens int64
+	CacheReadTokens     int64
+	CacheWriteTokens    int64
+	OutputTokens        int64
+	ReasoningTokens     int64
+	ReasoningEventCount int64
+}
+
+func (q *Queries) AggregateUsageByProjectHarnessModel(ctx context.Context, projectID interface{}) ([]AggregateUsageByProjectHarnessModelRow, error) {
+	rows, err := q.db.QueryContext(ctx, aggregateUsageByProjectHarnessModel, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AggregateUsageByProjectHarnessModelRow{}
+	for rows.Next() {
+		var i AggregateUsageByProjectHarnessModelRow
+		if err := rows.Scan(
+			&i.Harness,
+			&i.ModelID,
+			&i.InputTokens,
+			&i.UncachedInputTokens,
+			&i.CacheReadTokens,
+			&i.CacheWriteTokens,
+			&i.OutputTokens,
+			&i.ReasoningTokens,
+			&i.ReasoningEventCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const aggregateUsageBySessionHarnessModel = `-- name: AggregateUsageBySessionHarnessModel :many
 SELECT
     ub.harness,

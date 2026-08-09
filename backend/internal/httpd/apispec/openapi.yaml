@@ -4140,6 +4140,38 @@ paths:
       summary: Rename a standalone shell terminal tab
       tags:
       - shellTerminals
+  /api/v1/usage/overview:
+    get:
+      operationId: getUsageOverview
+      parameters:
+      - description: Optional project id filter for dashboard cards.
+        in: query
+        name: projectId
+        schema:
+          description: Optional project id filter for dashboard cards.
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageOverviewResponse'
+          description: OK
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: Get aggregate token usage for the usage dashboard
+      tags:
+      - usage
   /api/v1/usage/sessions:
     get:
       operationId: listCompactSessionUsage
@@ -7214,6 +7246,28 @@ components:
       required:
       - modelId
       - totals
+      type: object
+    UsageOverviewResponse:
+      properties:
+        harnesses:
+          items:
+            $ref: '#/components/schemas/UsageHarnessResponse'
+          type: array
+        incompleteSessionCount:
+          format: int64
+          minimum: 0
+          type: integer
+        sessionCount:
+          format: int64
+          minimum: 0
+          type: integer
+        totals:
+          $ref: '#/components/schemas/UsageTotalsResponse'
+      required:
+      - sessionCount
+      - incompleteSessionCount
+      - totals
+      - harnesses
       type: object
     UsageTotalsResponse:
       properties:

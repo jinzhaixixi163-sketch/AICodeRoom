@@ -367,6 +367,24 @@ WHERE ub.session_id = ?
 GROUP BY ub.harness, mue.model_id
 ORDER BY SUM(mue.input_tokens + mue.output_tokens) DESC, ub.harness, mue.model_id;
 
+-- name: AggregateUsageByProjectHarnessModel :many
+SELECT
+    ub.harness,
+    mue.model_id,
+    CAST(SUM(mue.input_tokens) AS INTEGER) AS input_tokens,
+    CAST(SUM(mue.uncached_input_tokens) AS INTEGER) AS uncached_input_tokens,
+    CAST(SUM(mue.cache_read_tokens) AS INTEGER) AS cache_read_tokens,
+    CAST(SUM(mue.cache_write_tokens) AS INTEGER) AS cache_write_tokens,
+    CAST(SUM(mue.output_tokens) AS INTEGER) AS output_tokens,
+    CAST(COALESCE(SUM(mue.reasoning_tokens), 0) AS INTEGER) AS reasoning_tokens,
+    COUNT(mue.reasoning_tokens) AS reasoning_event_count
+FROM model_usage_events mue
+JOIN usage_bindings ub ON ub.id = mue.binding_id
+JOIN sessions s ON s.id = ub.session_id
+WHERE (sqlc.arg(project_id) = '' OR s.project_id = sqlc.arg(project_id))
+GROUP BY ub.harness, mue.model_id
+ORDER BY SUM(mue.input_tokens + mue.output_tokens) DESC, ub.harness, mue.model_id;
+
 -- name: GetUsageSessionIncomplete :one
 SELECT CAST(COALESCE((
     SELECT incomplete FROM usage_session_integrity WHERE session_id = ?

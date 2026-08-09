@@ -442,6 +442,29 @@ func (s *Store) ListUsageModelAggregates(ctx context.Context, sessionID domain.S
 	return out, nil
 }
 
+// ListUsageModelAggregatesByProject returns model-level aggregate rows across
+// all sessions, optionally limited to one project.
+func (s *Store) ListUsageModelAggregatesByProject(ctx context.Context, projectID domain.ProjectID) ([]domain.UsageModelAggregate, error) {
+	rows, err := s.qr.AggregateUsageByProjectHarnessModel(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate usage for project %s: %w", projectID, err)
+	}
+	out := make([]domain.UsageModelAggregate, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, domain.UsageModelAggregate{
+			Harness: row.Harness, ModelID: row.ModelID,
+			Tokens: domain.UsageTokenMetrics{
+				InputTokens: row.InputTokens, UncachedInputTokens: row.UncachedInputTokens,
+				CacheReadTokens: row.CacheReadTokens, CacheWriteTokens: row.CacheWriteTokens,
+				OutputTokens:    row.OutputTokens,
+				ReasoningTokens: int64PtrWhen(row.ReasoningTokens, row.ReasoningEventCount > 0),
+			},
+			ReasoningEventCount: row.ReasoningEventCount,
+		})
+	}
+	return out, nil
+}
+
 // GetUsageSessionIncomplete reports whether durable collection facts indicate missing usage.
 func (s *Store) GetUsageSessionIncomplete(ctx context.Context, sessionID domain.SessionID) (bool, error) {
 	incomplete, err := s.qr.GetUsageSessionIncomplete(ctx, string(sessionID))

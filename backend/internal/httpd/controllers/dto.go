@@ -829,6 +829,14 @@ type ListCompactSessionUsageResponse struct {
 	Sessions []CompactSessionUsageResponse `json:"sessions"`
 }
 
+// UsageOverviewResponse is the global or project-scoped usage dashboard.
+type UsageOverviewResponse struct {
+	SessionCount           int64                  `json:"sessionCount" minimum:"0"`
+	IncompleteSessionCount int64                  `json:"incompleteSessionCount" minimum:"0"`
+	Totals                 UsageTotalsResponse    `json:"totals"`
+	Harnesses              []UsageHarnessResponse `json:"harnesses"`
+}
+
 // UsageTotalsResponse is the normalized telemetry aggregate for one scope.
 type UsageTotalsResponse struct {
 	InputTokens         *int64 `json:"inputTokens"`
