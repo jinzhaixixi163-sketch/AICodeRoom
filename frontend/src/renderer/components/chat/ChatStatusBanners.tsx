@@ -17,6 +17,7 @@ import { KeyRound, Plug, RefreshCw, TriangleAlert } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 import type { ConversationAccount, ConversationThreadState, McpServer } from "../../types/conversation";
+import { uiText } from "../../i18n/localized-ui";
 
 /**
  * The provider will not do any more work until someone signs in.
@@ -44,27 +45,25 @@ export const ReauthBanner = memo(function ReauthBanner({
 		>
 			<KeyRound aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-destructive" />
 			<div className="flex min-w-0 flex-col gap-1">
-				<strong className="text-xs font-semibold text-destructive">
-					Sign in again to keep going
-				</strong>
+				<strong className="text-xs font-semibold text-destructive">{uiText("Sign in again to keep going")}</strong>
 				<p className="text-[11px] leading-relaxed text-foreground">
-					{account.reauthReason ??
-						"The provider rejected this session's credentials."}{" "}
-					Nothing will run until it is fixed, and the worktree is untouched.
+					{uiText(account.reauthReason ?? "The provider rejected this session's credentials.")}{" "}
+					{uiText("Nothing will run until it is fixed, and the worktree is untouched.")}
 				</p>
 				<p className="text-[11px] leading-relaxed text-muted-foreground">
 					{command ? (
 						<>
-							Run{" "}
+							{uiText("Run")}{" "}
 							<code className="rounded bg-background px-1 py-0.5 font-mono text-[10.5px] text-foreground">
 								{command}
 							</code>{" "}
-							in a terminal, then send your message again. AO holds no credentials of its own.
+							{uiText("in a terminal, then send your message again. AO holds no credentials of its own.")}
 						</>
 					) : (
 						<>
-							Sign in with the agent&rsquo;s own CLI, then send your message again. AO holds no
-							credentials of its own.
+							{uiText(
+								"Sign in with the agent’s own CLI, then send your message again. AO holds no credentials of its own.",
+							)}
 						</>
 					)}
 				</p>
@@ -132,11 +131,11 @@ export const ThreadStateBanner = memo(function ThreadStateBanner({
 		>
 			<TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-warning" />
 			<div className="flex min-w-0 flex-col gap-0.5">
-				<strong className="text-xs font-medium text-warning">{copy.title}</strong>
-				<span className="text-[11px] leading-snug text-muted-foreground">{copy.body}</span>
+				<strong className="text-xs font-medium text-warning">{uiText(copy.title)}</strong>
+				<span className="text-[11px] leading-snug text-muted-foreground">{uiText(copy.body)}</span>
 				{threadState.waitingOn?.length ? (
 					<span className="text-[11px] leading-snug text-muted-foreground">
-						Waiting on: {threadState.waitingOn.join(", ")}
+						{uiText("Waiting on:")} {threadState.waitingOn.join(", ")}
 					</span>
 				) : null}
 			</div>
@@ -181,12 +180,11 @@ export const McpServerBanner = memo(function McpServerBanner({
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
 				<strong className="text-xs font-medium text-warning">
 					{servers.length === 1
-						? "A tool server did not start"
-						: `${servers.length} tool servers did not start`}
+						? uiText("A tool server did not start")
+						: `${servers.length} ${uiText("tool servers did not start")}`}
 				</strong>
 				<span className="text-[11px] leading-snug text-muted-foreground">
-					The agent has none of their tools and will not say so — it works around them
-					silently.
+					{uiText("The agent has none of their tools and will not say so — it works around them silently.")}
 				</span>
 				<ul className="flex flex-col gap-0.5">
 					{servers.map((server) => (
@@ -194,7 +192,7 @@ export const McpServerBanner = memo(function McpServerBanner({
 							<span className="font-mono text-foreground">{server.name}</span>
 							<span className="text-muted-foreground">
 								{" · "}
-								{server.status}
+								{uiText(server.status)}
 								{/* The classification first, then the raw text: one is actionable,
 								    the other is the provider's own words and often long. */}
 								{server.failureReason ? ` · ${server.failureReason}` : ""}
@@ -207,7 +205,7 @@ export const McpServerBanner = memo(function McpServerBanner({
 						</li>
 					))}
 				</ul>
-				{error ? <span className="text-[11px] text-destructive">{error}</span> : null}
+				{error ? <span className="text-[11px] text-destructive">{uiText(error)}</span> : null}
 			</div>
 			{onReload ? (
 				<Button
@@ -218,16 +216,13 @@ export const McpServerBanner = memo(function McpServerBanner({
 					disabled={reloading || turnInFlight}
 					title={
 						turnInFlight
-							? "Finish or stop the current turn before reloading tool servers"
-							: "Start the tool servers again"
+							? uiText("Finish or stop the current turn before reloading tool servers")
+							: uiText("Start the tool servers again")
 					}
 					className="shrink-0 gap-1.5"
 				>
-					<RefreshCw
-						aria-hidden="true"
-						className={cn("size-3", reloading && "animate-spin")}
-					/>
-					{reloading ? "Reloading…" : "Reload"}
+					<RefreshCw aria-hidden="true" className={cn("size-3", reloading && "animate-spin")} />
+					{uiText(reloading ? "Reloading…" : "Reload")}
 				</Button>
 			) : null}
 		</div>

@@ -17,6 +17,7 @@ import { AlertTriangle } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import type { ConversationRateLimits, ConversationUsage } from "../../types/conversation";
+import { uiText } from "../../i18n/localized-ui";
 
 /**
  * Where the fill changes colour.
@@ -102,7 +103,7 @@ function formatCost(amount: number, currency = "USD"): string {
  * measured in days, so minute precision on a four-day reset would be noise.
  */
 function formatResetIn(seconds: number): string {
-	if (seconds <= 0) return "now";
+	if (seconds <= 0) return uiText("now");
 	const minutes = Math.floor(seconds / 60);
 	if (minutes < 60) return `${Math.max(1, minutes)}m`;
 	const hours = Math.floor(minutes / 60);
@@ -115,12 +116,16 @@ function formatResetIn(seconds: number): string {
  * neither. Negative is the daemon's "not reported" signal and must not be drawn:
  * a meter running backwards is worse than no meter.
  */
-function worstWindow(
-	limits: ConversationRateLimits,
-): { percent: number; resetsIn?: number } | undefined {
+function worstWindow(limits: ConversationRateLimits): { percent: number; resetsIn?: number } | undefined {
 	const windows = [
-		{ percent: limits.primaryUsedPercent, resetsIn: limits.primaryResetsInSeconds },
-		{ percent: limits.secondaryUsedPercent, resetsIn: limits.secondaryResetsInSeconds },
+		{
+			percent: limits.primaryUsedPercent,
+			resetsIn: limits.primaryResetsInSeconds,
+		},
+		{
+			percent: limits.secondaryUsedPercent,
+			resetsIn: limits.secondaryResetsInSeconds,
+		},
 	].filter((w) => typeof w.percent === "number" && w.percent >= 0);
 	if (windows.length === 0) return undefined;
 	return windows.reduce((worst, w) => (w.percent > worst.percent ? w : worst));
@@ -168,13 +173,16 @@ function ContextReadout({ usage }: { usage: ConversationUsage }) {
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<span className="tabular-nums text-[11px] text-muted-foreground">
-						{formatTokens(contextUsed || usage.totalTokens)} tokens
+						{formatTokens(contextUsed || usage.totalTokens)} {uiText("tokens")}
 					</span>
 				</TooltipTrigger>
 				<TooltipContent>
-					<p>This model does not report a context window, so how full the conversation is
-					is unknown.</p>
-					{usage.cost != null ? <p className="mt-1 tabular-nums">Provider-reported cost: {formatCost(usage.cost, usage.currency)}</p> : null}
+					<p>{uiText("This model does not report a context window, so how full the conversation is is unknown.")}</p>
+					{usage.cost != null ? (
+						<p className="mt-1 tabular-nums">
+							{uiText("Provider-reported cost:")} {formatCost(usage.cost, usage.currency)}
+						</p>
+					) : null}
 				</TooltipContent>
 			</Tooltip>
 		);
@@ -198,7 +206,7 @@ function ContextReadout({ usage }: { usage: ConversationUsage }) {
 					aria-valuemin={0}
 					aria-valuemax={100}
 					aria-valuenow={percent}
-					aria-label="Context window used"
+					aria-label={uiText("Context window used")}
 				>
 					<div className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
 						<div
@@ -211,24 +219,24 @@ function ContextReadout({ usage }: { usage: ConversationUsage }) {
 			</TooltipTrigger>
 			<TooltipContent>
 				<p className="tabular-nums">
-					{contextUsed.toLocaleString()} of {contextWindow.toLocaleString()} tokens of context
-					used
+					{contextUsed.toLocaleString()} {uiText("of")} {contextWindow.toLocaleString()}{" "}
+					{uiText("tokens of context used")}
 				</p>
 				{severity !== "normal" ? (
 					<p className="mt-1">
 						{severity === "critical"
-							? "The next turn may not fit. Compacting or starting a new conversation will reclaim room."
-							: "Room is running low. A long task may not fit."}
+							? uiText("The next turn may not fit. Compacting or starting a new conversation will reclaim room.")
+							: uiText("Room is running low. A long task may not fit.")}
 					</p>
 				) : null}
 				{usage.totalTokens > 0 ? (
 					<p className="mt-1 tabular-nums text-muted-foreground">
-						{usage.totalTokens.toLocaleString()} tokens spent in total
+						{usage.totalTokens.toLocaleString()} {uiText("tokens spent in total")}
 					</p>
 				) : null}
 				{usage.cost != null ? (
 					<p className="mt-1 tabular-nums text-muted-foreground">
-						Provider-reported cost: {formatCost(usage.cost, usage.currency)}
+						{uiText("Provider-reported cost:")} {formatCost(usage.cost, usage.currency)}
 					</p>
 				) : null}
 			</TooltipContent>
@@ -259,21 +267,24 @@ function QuotaWarning({
 					)}
 				>
 					<AlertTriangle aria-hidden="true" className="size-3" />
-					{percent}% quota
+					{percent}
+					{uiText("% quota")}
 				</span>
 			</TooltipTrigger>
 			<TooltipContent>
 				<p>
-					This account has used {percent}% of its
-					{limits?.planLabel ? ` ${limits.planLabel}` : ""} rate limit
-					{resets ? `, which resets in ${resets}` : ""}.
+					{uiText("This account has used")} {percent}
+					{uiText("% of its")}
+					{limits?.planLabel ? ` ${limits.planLabel}` : ""} {uiText("rate limit")}
+					{resets ? `${uiText(", which resets in")} ${resets} ${uiText("after reset")}` : ""}
+					{uiText(".")}
 				</p>
 				{/* Named explicitly because this is the failure a user cannot otherwise
 				    explain: the turn was fine, the account was not. */}
 				<p className="mt-1">
 					{severity === "critical"
-						? "Turns may start failing for reasons unrelated to what you asked."
-						: "If this reaches the limit, turns will fail until the window resets."}
+						? uiText("Turns may start failing for reasons unrelated to what you asked.")
+						: uiText("If this reaches the limit, turns will fail until the window resets.")}
 				</p>
 			</TooltipContent>
 		</Tooltip>

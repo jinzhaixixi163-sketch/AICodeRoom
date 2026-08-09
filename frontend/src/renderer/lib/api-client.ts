@@ -3,6 +3,7 @@ import type { paths } from "../../api/schema";
 import type { DaemonStatus } from "../../shared/daemon-status";
 import { daemonFailureMessage } from "./daemon-failure";
 import { captureRendererEvent } from "./telemetry";
+import { uiText } from "../i18n/localized-ui";
 
 function devApiBaseUrl(): string {
 	return typeof window === "undefined" ? "http://127.0.0.1:3001" : window.location.origin;
@@ -191,10 +192,16 @@ async function runtimeFetch(input: Request): Promise<Response> {
 	const baseUrl = runtimeApiBaseUrl;
 	if (baseUrl === null) {
 		reportApiError(operation, "daemon_unavailable", 503);
-		return new Response(JSON.stringify({ message: daemonFailureMessage(daemonStatus), code: daemonStatus.code }), {
-			status: 503,
-			headers: { "Content-Type": "application/json" },
-		});
+		return new Response(
+			JSON.stringify({
+				message: daemonFailureMessage(daemonStatus),
+				code: daemonStatus.code,
+			}),
+			{
+				status: 503,
+				headers: { "Content-Type": "application/json" },
+			},
+		);
 	}
 
 	const send = async (): Promise<Response> => {
@@ -274,15 +281,20 @@ export function apiErrorRequestId(error: unknown): string | undefined {
 }
 
 export function apiErrorMessage(error: unknown, fallback = "Request failed"): string {
-	if (error instanceof Error) return error.message;
-	if (typeof error === "string" && error !== "") return error;
+	if (error instanceof Error) return uiText(error.message);
+	if (typeof error === "string" && error !== "") return uiText(error);
 	if (typeof error === "object" && error !== null) {
-		const body = error as { code?: unknown; message?: unknown; error?: unknown };
+		const body = error as {
+			code?: unknown;
+			message?: unknown;
+			error?: unknown;
+		};
 		const code = typeof body.code === "string" && body.code !== "" ? body.code : "";
 		if (typeof body.message === "string" && body.message !== "") {
-			return code && !body.message.includes(code) ? `${body.message} (${code})` : body.message;
+			const message = uiText(body.message);
+			return code && !message.includes(code) ? `${message} (${code})` : message;
 		}
-		if (typeof body.error === "string" && body.error !== "") return body.error;
+		if (typeof body.error === "string" && body.error !== "") return uiText(body.error);
 	}
-	return fallback;
+	return uiText(fallback);
 }

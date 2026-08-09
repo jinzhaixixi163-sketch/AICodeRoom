@@ -83,6 +83,10 @@ export default defineConfig({
 	// to the daemon so the renderer can be tested against a running daemon from
 	// a plain browser without an Electron shell.
 	server: {
+		// Bind the same loopback family Electron opens. If another local project
+		// already owns 5173, Vite selects the next free port and Forge receives
+		// that exact URL instead of resolving localhost to the other application.
+		host: "127.0.0.1",
 		proxy: {
 			"/api": {
 				target: process.env.AO_DEV_API_TARGET ?? "http://127.0.0.1:3001",

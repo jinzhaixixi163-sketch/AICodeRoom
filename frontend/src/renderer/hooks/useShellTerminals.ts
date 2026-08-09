@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { components } from "../../api/schema";
 import { apiClient, hasTrustedApiBaseUrl } from "../lib/api-client";
 import { mockShellTerminals } from "../lib/mock-data";
+import { uiText } from "../i18n/localized-ui";
 
 export type ShellTerminal = {
 	/** Runtime handle the terminal mux attaches to, exactly like a session pane's. */
@@ -92,9 +93,11 @@ export function useOpenShellTerminal() {
 			const body: OpenShellTerminalInput = {};
 			if (projectId) body.projectId = projectId;
 			if (sessionId) body.sessionId = sessionId;
-			const { data, error } = await apiClient.POST("/api/v1/shell-terminals", { body });
+			const { data, error } = await apiClient.POST("/api/v1/shell-terminals", {
+				body,
+			});
 			if (error) throw error;
-			if (!data) throw new Error("Daemon returned no shell terminal");
+			if (!data) throw new Error(uiText("Daemon returned no shell terminal"));
 			return toShellTerminal(data.shellTerminal);
 		},
 		onSuccess: () => {
@@ -140,7 +143,7 @@ export function useRenameShellTerminal() {
 			if (usePreviewData) {
 				previewShellTerminals = previewShellTerminals.map((s) => (s.handleId === handleId ? { ...s, title } : s));
 				const shell = previewShellTerminals.find((s) => s.handleId === handleId);
-				if (!shell) throw new Error("No such shell terminal");
+				if (!shell) throw new Error(uiText("No such shell terminal"));
 				return shell;
 			}
 			const { data, error } = await apiClient.PATCH("/api/v1/shell-terminals/{handleId}", {
@@ -148,7 +151,7 @@ export function useRenameShellTerminal() {
 				body: { title },
 			});
 			if (error) throw error;
-			if (!data) throw new Error("Daemon returned no shell terminal");
+			if (!data) throw new Error(uiText("Daemon returned no shell terminal"));
 			return toShellTerminal(data.shellTerminal);
 		},
 		onSuccess: () => {

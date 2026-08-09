@@ -3,6 +3,7 @@ import { workspaceQueryKey } from "../hooks/useWorkspaceQuery";
 import type { SessionMode } from "../types/conversation";
 import { OrchestratorSpawnError, spawnOrchestrator } from "./spawn-orchestrator";
 import type { OrchestratorReplacementFailure } from "../stores/ui-store";
+import { uiText } from "../i18n/localized-ui";
 
 type NavigateToSession = (options: {
 	to: "/projects/$projectId/sessions/$sessionId";
@@ -49,10 +50,8 @@ export async function restartProjectOrchestrator({
 	} catch (error) {
 		await refreshWorkspaceState(queryClient);
 		setOrchestratorReplacementError(projectId, {
-			message: error instanceof Error ? error.message : "Could not replace orchestrator",
-			...(error instanceof OrchestratorSpawnError
-				? { code: error.code, requestId: error.requestId }
-				: {}),
+			message: uiText(error instanceof Error ? error.message : "Could not replace orchestrator"),
+			...(error instanceof OrchestratorSpawnError ? { code: error.code, requestId: error.requestId } : {}),
 		});
 		onError?.(error);
 	} finally {

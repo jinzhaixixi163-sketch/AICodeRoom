@@ -1,19 +1,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { uiText } from "../i18n/localized-ui";
 import type { TFunction } from "i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import {
-	AlertTriangle,
-	Check,
-	Copy,
-	GitBranch,
-	LoaderCircle,
-	Plus,
-	RotateCcw,
-	RotateCw,
-	Trash2,
-} from "lucide-react";
+import { AlertTriangle, Check, Copy, GitBranch, LoaderCircle, Plus, RotateCcw, RotateCw, Trash2 } from "lucide-react";
 import {
 	type WorkspaceSession,
 	canonicalTrackerIssueId,
@@ -33,10 +24,7 @@ import {
 	type AttentionZoneView,
 } from "../lib/session-presentation";
 import { useSessionScmSummary, type SessionPRSummary } from "../hooks/useSessionScmSummary";
-import {
-	useSessionUsageSummaries,
-	type SessionUsageSummary,
-} from "../hooks/useSessionUsageSummaries";
+import { useSessionUsageSummaries, type SessionUsageSummary } from "../hooks/useSessionUsageSummaries";
 import { useRestoreSession } from "../hooks/useRestoreSession";
 import {
 	clearTerminateSessionState,
@@ -207,7 +195,10 @@ export function SessionsBoard({ projectId }: SessionsBoardProps) {
 				setRestoreUnavailableSession(session);
 				return;
 			}
-			setRestoreErrors((current) => ({ ...current, [session.id]: result.message }));
+			setRestoreErrors((current) => ({
+				...current,
+				[session.id]: result.message,
+			}));
 		} finally {
 			if (isStillActiveProject()) {
 				setRestoringSessionId(undefined);
@@ -288,7 +279,9 @@ export function SessionsBoard({ projectId }: SessionsBoardProps) {
 			<TopbarButton
 				aria-label={
 					orchestratorActivityLabel
-						? t("shell.orchestratorWithActivity", { activity: orchestratorActivityLabel })
+						? t("shell.orchestratorWithActivity", {
+								activity: orchestratorActivityLabel,
+							})
 						: t("shell.spawnOrchestrator")
 				}
 				disabled={isSpawning || isProjectRestarting}
@@ -337,11 +330,11 @@ export function SessionsBoard({ projectId }: SessionsBoardProps) {
 				{projectId && health.state !== "ok" ? (
 					<div className="mx-3 my-3 flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
 						<AlertTriangle className="size-icon-base shrink-0 text-warning" aria-hidden="true" />
-						<span className="min-w-0 flex-1">{health.message}</span>
+						<span className="min-w-0 flex-1">{uiText(health.message)}</span>
 						{health.state === "restart_needed" || health.state === "duplicates" ? (
-								<TopbarButton disabled={isProjectRestarting} onClick={() => void restartOrchestrator()} variant="primary">
-									<RotateCw className="size-3.5" aria-hidden="true" />
-									{t("shell.restart")}
+							<TopbarButton disabled={isProjectRestarting} onClick={() => void restartOrchestrator()} variant="primary">
+								<RotateCw className="size-3.5" aria-hidden="true" />
+								{t("shell.restart")}
 							</TopbarButton>
 						) : null}
 					</div>
@@ -394,7 +387,9 @@ export function SessionsBoard({ projectId }: SessionsBoardProps) {
 					<div className={cn("flex items-center gap-2", archiveExpanded ? "min-h-11" : "min-h-row-md")}>
 						<button
 							aria-expanded={archiveExpanded}
-							aria-label={t("shell.archiveSessionsAria", { count: archived.length })}
+							aria-label={t("shell.archiveSessionsAria", {
+								count: archived.length,
+							})}
 							className="group flex h-[46px] min-w-0 items-center gap-2 py-0 text-muted-foreground transition-colors hover:text-foreground"
 							onClick={() => setArchiveExpanded((v) => !v)}
 							type="button"
@@ -445,7 +440,9 @@ export function SessionsBoard({ projectId }: SessionsBoardProps) {
 						if (!open) setRestoreUnavailableSession(undefined);
 					}}
 					onRecreated={async () => {
-						await queryClient.invalidateQueries({ queryKey: workspaceQueryKey });
+						await queryClient.invalidateQueries({
+							queryKey: workspaceQueryKey,
+						});
 					}}
 				/>
 			)}
@@ -468,22 +465,12 @@ function BoardColumn({
 }) {
 	if (col.zone === "working") {
 		return (
-			<WorkLaneColumn
-				sessions={sessions}
-				onOpen={onOpen}
-				onTerminate={onTerminate}
-				usageBySession={usageBySession}
-			/>
+			<WorkLaneColumn sessions={sessions} onOpen={onOpen} onTerminate={onTerminate} usageBySession={usageBySession} />
 		);
 	}
 	if (col.zone === "merge") {
 		return (
-			<MergeLaneColumn
-				sessions={sessions}
-				onOpen={onOpen}
-				onTerminate={onTerminate}
-				usageBySession={usageBySession}
-			/>
+			<MergeLaneColumn sessions={sessions} onOpen={onOpen} onTerminate={onTerminate} usageBySession={usageBySession} />
 		);
 	}
 	return (
@@ -704,7 +691,10 @@ function SplitLaneColumn({
 		>
 			<div className="flex h-12 shrink-0 items-center gap-2.5 px-4">
 				<div
-					aria-label={t("shell.laneSummaryAria", { primary: primaryTone.label, secondary: secondaryTone.label })}
+					aria-label={t("shell.laneSummaryAria", {
+						primary: primaryTone.label,
+						secondary: secondaryTone.label,
+					})}
 					className="flex min-w-0 items-center gap-2 font-mono text-2xs font-medium uppercase tracking-wide-sm"
 					role="group"
 				>
@@ -762,7 +752,9 @@ function LaneStatusLabel({ tone }: { tone: SplitLaneTone }) {
 		<span className={cn("inline-flex shrink-0 items-center gap-2 whitespace-nowrap", tone.titleClassName)}>
 			<span
 				className={cn("size-dot-sm rounded-full", tone.dotClassName)}
-				style={{ boxShadow: tone.dotGlow ? `0 0 7px color-mix(in srgb, ${tone.color} 60%, transparent)` : undefined }}
+				style={{
+					boxShadow: tone.dotGlow ? `0 0 7px color-mix(in srgb, ${tone.color} 60%, transparent)` : undefined,
+				}}
 				aria-hidden="true"
 			/>
 			{tone.label}
@@ -1072,7 +1064,9 @@ function ArchiveRestoreButton({
 					<RotateCcw className={cn("size-icon-md", isRestoring && "animate-spin")} aria-hidden="true" />
 				</button>
 			</TooltipTrigger>
-			<TooltipContent side="top">{isRestoring ? t("shell.restoringSession") : t("shell.restoreSession")}</TooltipContent>
+			<TooltipContent side="top">
+				{isRestoring ? t("shell.restoringSession") : t("shell.restoreSession")}
+			</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -1085,7 +1079,10 @@ function ArchiveRestoreError({ message }: { message?: string }) {
 	) : null;
 }
 
-type BoardPRLifecycleStatus = { label: "closed" | "open" | "draft" | "merged"; className: string };
+type BoardPRLifecycleStatus = {
+	label: "closed" | "open" | "draft" | "merged";
+	className: string;
+};
 type BoardPRGroup = { status: BoardPRLifecycleStatus; prs: SessionPRSummary[] };
 
 function BoardPRGroup({ group }: { group: BoardPRGroup }) {

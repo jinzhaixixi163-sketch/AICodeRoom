@@ -36,6 +36,7 @@ import {
 	coerceUiSettings,
 	readUiSettings,
 	writeUiSettings,
+	type AppLocale,
 	type UiSettings,
 } from "./main/ui-settings";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -81,7 +82,7 @@ import { keepDaemonAlive, shouldLinkOnAttach } from "./main/daemon-owner";
 import { readMigrationState, updateMigration, writeAppStateMarker, type MigrationState } from "./main/app-state";
 import { isAllowedAppExternalURL, openAllowedAppExternalURL } from "./main/external-open";
 import { shouldSignalAttention, shouldToast } from "./main/notification-signals";
-import { buildWindowsAppMenuTemplate } from "./main/menu";
+import { buildAppMenuTemplate } from "./main/menu";
 import { ancestorRepositorySetupWarning, scanImportFolder } from "./main/import-folder-scan";
 
 // Globals injected at compile time by @electron-forge/plugin-vite.
@@ -153,6 +154,7 @@ let browserRuntimeLinkIdentity: BrowserRuntimeIdentity | null = null;
 let keybindingOverrides: KeybindingOverrides = {};
 let keybindingRecordingActive = false;
 let closeShellTerminalShortcutEnabled = false;
+let currentUiLocale: AppLocale = DEFAULT_UI_SETTINGS.locale;
 // Held for the app lifetime. Dropping it (on any exit) triggers daemon self-stop.
 let supervisorLink: SupervisorLinkHandle | null = null;
 // Guard: prevents stacking multiple flashFrame(true) calls when notifications arrive rapidly.
@@ -323,19 +325,31 @@ function appendDaemonOutput(text: string): void {
 	daemonOutput = (daemonOutput + text).slice(-MAX_DAEMON_OUTPUT_CHARS);
 }
 
-// Menu installed on Windows where the native menu bar is hidden. The bar stays
-// out of sight, but the roles keep their accelerators alive (Reload, zoom, full
-// screen, edit commands). DevTools uses the AO browser toggle so the focused
-// Browser panel opens the same native Chromium surface as the toolbar.
-function buildWindowsAppMenu(): Menu {
+// Keep native menus and accelerators aligned with the selected UI language.
+// DevTools uses the AO browser toggle so the focused Browser panel opens the
+// same native Chromium surface as the toolbar.
+function buildApplicationMenu(): Menu {
 	return Menu.buildFromTemplate(
-		buildWindowsAppMenuTemplate(() => {
-			const fallback = () => getShellWebContents()?.toggleDevTools();
-			void browserViewHost?.toggleDevToolsForLastFocused().then((state) => {
-				if (!state) fallback();
-			}).catch(fallback);
+		buildAppMenuTemplate({
+			appName: app.name,
+			locale: currentUiLocale,
+			platform: process.platform,
+			onToggleDevTools: () => {
+				const fallback = () => getShellWebContents()?.toggleDevTools();
+				void browserViewHost
+					?.toggleDevToolsForLastFocused()
+					.then((state) => {
+						if (!state) fallback();
+					})
+					.catch(fallback);
+			},
 		}),
 	);
+}
+
+function installApplicationMenu(): void {
+	Menu.setApplicationMenu(buildApplicationMenu());
+	if (process.platform === "win32") mainWindow?.setMenuBarVisibility(false);
 }
 
 async function disposeBrowserViewHost(): Promise<void> {
@@ -424,8 +438,7 @@ async function createWindowInternal(): Promise<void> {
 	// setMenuBarVisibility(false) keeps the strip itself out of view. macOS/Linux
 	// keep their native menus.
 	if (process.platform === "win32") {
-		Menu.setApplicationMenu(buildWindowsAppMenu());
-		mainWindow.setMenuBarVisibility(false);
+		installApplicationMenu();
 	}
 
 	// Harden navigation: never let renderer/terminal content open in-app windows or
@@ -1665,6 +1678,8 @@ ipcMain.handle("uiSettings:get", async (): Promise<UiSettings> => {
 	ipcMain.handle("uiSettings:set", async (_event, settings: UiSettings): Promise<UiSettings> => {
 		const runFile = runFilePath();
 	const result = !runFile ? coerceUiSettings(settings) : await writeUiSettings(path.dirname(runFile), settings);
+	currentUiLocale = result.locale;
+	installApplicationMenu();
 	trayController?.setLocale(result.locale);
 	return result;
 	});
@@ -1898,6 +1913,11 @@ app.whenReady().then(async () => {
 	}
 
 	const keybindingRunFile = runFilePath();
+	const initialUiSettings = keybindingRunFile
+		? await readUiSettings(path.dirname(keybindingRunFile))
+		: DEFAULT_UI_SETTINGS;
+	currentUiLocale = initialUiSettings.locale;
+	if (process.platform !== "win32") installApplicationMenu();
 	if (keybindingRunFile) {
 		keybindingOverrides = await readKeybindingOverrides(path.dirname(keybindingRunFile));
 	}
@@ -1905,9 +1925,6 @@ app.whenReady().then(async () => {
 	registerRendererProtocol();
 	applyRuntimeAppIcon();
 	if (isTrayEnabled(process.platform, app.isPackaged, app.getVersion())) {
-		const initialUiSettings = keybindingRunFile
-			? await readUiSettings(path.dirname(keybindingRunFile))
-			: DEFAULT_UI_SETTINGS;
 		trayController = createTrayController({
 			focusWindow: focusMainWindow,
 			openSession: trayLifecycle.openSession,

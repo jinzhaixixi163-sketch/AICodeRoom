@@ -4,6 +4,7 @@ import { aoBridge } from "../../lib/bridge";
 import { cn } from "../../lib/utils";
 import type { ConversationActivity } from "../../types/conversation";
 import { Button } from "../ui/button";
+import { uiText } from "../../i18n/localized-ui";
 
 type InputAction = "accept" | "decline" | "cancel";
 type InputValue = string | number | boolean | string[];
@@ -13,11 +14,7 @@ export function ElicitationCard({
 	onResolve,
 }: {
 	activity: ConversationActivity;
-	onResolve?: (
-		requestId: string,
-		action: InputAction,
-		content?: Record<string, unknown>,
-	) => Promise<unknown> | void;
+	onResolve?: (requestId: string, action: InputAction, content?: Record<string, unknown>) => Promise<unknown> | void;
 }) {
 	const requestId = activity.requestId;
 	const pending = activity.status === "pending";
@@ -32,7 +29,7 @@ export function ElicitationCard({
 		try {
 			await onResolve(requestId, action, content);
 		} catch (reason) {
-			setError(reason instanceof Error ? reason.message : "The answer could not be sent.");
+			setError(uiText(reason instanceof Error ? reason.message : "The answer could not be sent."));
 		} finally {
 			setSubmitting(false);
 		}
@@ -40,7 +37,7 @@ export function ElicitationCard({
 
 	return (
 		<section
-			aria-label="Agent question"
+			aria-label={uiText("Agent question")}
 			className="overflow-hidden rounded-xl border border-logo-accent/25 bg-logo-accent/[0.035]"
 		>
 			<div className="flex items-start gap-3 px-4 py-3.5">
@@ -49,7 +46,7 @@ export function ElicitationCard({
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-logo-accent">
-						Agent needs your input
+						{uiText("Agent needs your input")}
 					</p>
 					<h3 className="mt-1 text-sm font-medium leading-relaxed text-foreground">
 						{activity.detail?.message || activity.summary}
@@ -57,7 +54,7 @@ export function ElicitationCard({
 				</div>
 				{!pending ? (
 					<span className="mt-1 text-[11px] font-medium text-muted-foreground">
-						{activity.status === "failed" ? "Expired" : "Answered"}
+						{uiText(activity.status === "failed" ? "Expired" : "Answered")}
 					</span>
 				) : null}
 			</div>
@@ -70,7 +67,7 @@ export function ElicitationCard({
 
 			{error ? (
 				<p role="alert" className="border-t border-destructive/20 px-4 py-2 text-xs text-destructive">
-					{error}
+					{uiText(error)}
 				</p>
 			) : null}
 		</section>
@@ -101,7 +98,7 @@ function URLRequest({
 			await aoBridge.app.openExternal(parsed.href);
 			await onResolve("accept");
 		} catch {
-			setOpenError("The link could not be opened. Nothing was approved.");
+			setOpenError(uiText("The link could not be opened. Nothing was approved."));
 		} finally {
 			setOpening(false);
 		}
@@ -112,26 +109,38 @@ function URLRequest({
 			{parsed ? (
 				<div className="rounded-lg border border-border bg-background/70 px-3 py-2.5">
 					<p className="text-[11px] font-medium text-foreground">{parsed.hostname}</p>
-					<p className="mt-0.5 break-all font-mono text-[10px] leading-relaxed text-muted-foreground">
-						{parsed.href}
-					</p>
+					<p className="mt-0.5 break-all font-mono text-[10px] leading-relaxed text-muted-foreground">{parsed.href}</p>
 				</div>
 			) : (
 				<p role="alert" className="text-xs text-destructive">
-					The provider supplied an unsafe or invalid URL. It was not opened.
+					{uiText("The provider supplied an unsafe or invalid URL. It was not opened.")}
 				</p>
 			)}
-			{openError ? <p role="alert" className="mt-2 text-xs text-destructive">{openError}</p> : null}
+			{openError ? (
+				<p role="alert" className="mt-2 text-xs text-destructive">
+					{uiText(openError)}
+				</p>
+			) : null}
 			<div className="mt-3 flex items-center justify-end gap-2">
 				<Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => onResolve("cancel")}>
-					Cancel
+					{uiText("Cancel")}
 				</Button>
 				<Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => onResolve("decline")}>
-					Decline
+					{uiText("Decline")}
 				</Button>
-				<Button type="button" size="sm" disabled={disabled || !parsed} onClick={() => void consent()} className="gap-1.5">
-					{opening ? <Loader2 aria-hidden="true" className="size-3.5 animate-spin" /> : <ExternalLink aria-hidden="true" className="size-3.5" />}
-					Open {parsed?.hostname ?? "link"}
+				<Button
+					type="button"
+					size="sm"
+					disabled={disabled || !parsed}
+					onClick={() => void consent()}
+					className="gap-1.5"
+				>
+					{opening ? (
+						<Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+					) : (
+						<ExternalLink aria-hidden="true" className="size-3.5" />
+					)}
+					{uiText("Open")} {parsed?.hostname ?? uiText("link")}
 				</Button>
 			</div>
 		</div>
@@ -156,9 +165,7 @@ function FormRequest({
 	function submit(event: FormEvent) {
 		event.preventDefault();
 		const absent = new Set(
-			properties
-				.filter(([name]) => required.has(name) && isEmpty(values[name]))
-				.map(([name]) => name),
+			properties.filter(([name]) => required.has(name) && isEmpty(values[name])).map(([name]) => name),
 		);
 		setMissing(absent);
 		if (absent.size > 0) return;
@@ -195,14 +202,18 @@ function FormRequest({
 			<div className="mt-4 flex items-center justify-between gap-2">
 				<div className="flex items-center gap-1">
 					<Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => onResolve("cancel")}>
-						Cancel
+						{uiText("Cancel")}
 					</Button>
 					<Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => onResolve("decline")}>
-						Skip
+						{uiText("Skip")}
 					</Button>
 				</div>
 				<Button type="submit" size="sm" disabled={disabled} className="min-w-20">
-					{disabled ? <Loader2 aria-label="Sending answer" className="size-3.5 animate-spin" /> : "Continue"}
+					{disabled ? (
+						<Loader2 aria-label={uiText("Sending answer")} className="size-3.5 animate-spin" />
+					) : (
+						uiText("Continue")
+					)}
 				</Button>
 			</div>
 		</form>
@@ -242,32 +253,51 @@ function FormField({
 				aria-invalid={invalid || undefined}
 				aria-describedby={invalid ? errorId : undefined}
 			>
-				<legend className="text-xs font-medium text-foreground">{label}{required ? " *" : ""}</legend>
+				<legend className="text-xs font-medium text-foreground">
+					{label}
+					{required ? " *" : ""}
+				</legend>
 				{description ? <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{description}</p> : null}
 				<div className="mt-2 grid gap-1.5">
 					{options.map((option) => {
-						const checked = multi
-							? Array.isArray(value) && value.includes(option.value)
-							: value === option.value;
+						const checked = multi ? Array.isArray(value) && value.includes(option.value) : value === option.value;
 						return (
-							<label key={option.value} className={cn("flex cursor-pointer gap-2 rounded-lg border px-3 py-2 transition-colors", checked ? "border-logo-accent/45 bg-logo-accent/[0.06]" : "border-border bg-background/50 hover:bg-interactive-hover") }>
+							<label
+								key={option.value}
+								className={cn(
+									"flex cursor-pointer gap-2 rounded-lg border px-3 py-2 transition-colors",
+									checked
+										? "border-logo-accent/45 bg-logo-accent/[0.06]"
+										: "border-border bg-background/50 hover:bg-interactive-hover",
+								)}
+							>
 								<input
 									type={multi ? "checkbox" : "radio"}
 									name={name}
 									value={option.value}
 									checked={checked}
-									onChange={() => onChange(multi ? toggleValue(Array.isArray(value) ? value : [], option.value) : option.value)}
+									onChange={() =>
+										onChange(multi ? toggleValue(Array.isArray(value) ? value : [], option.value) : option.value)
+									}
 									className="mt-0.5 accent-[var(--logo-accent)]"
 								/>
 								<span className="min-w-0">
 									<span className="block text-xs text-foreground">{option.label}</span>
-									{option.description ? <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{option.description}</span> : null}
+									{option.description ? (
+										<span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">
+											{option.description}
+										</span>
+									) : null}
 								</span>
 							</label>
 						);
 					})}
 				</div>
-				{invalid ? <p id={errorId} className="mt-1 text-[11px] text-destructive">Choose an answer.</p> : null}
+				{invalid ? (
+					<p id={errorId} className="mt-1 text-[11px] text-destructive">
+						{uiText("Choose an answer.")}
+					</p>
+				) : null}
 			</fieldset>
 		);
 	}
@@ -286,9 +316,16 @@ function FormField({
 						onChange={(event) => onChange(event.target.checked)}
 						className="mt-0.5 accent-[var(--logo-accent)]"
 					/>
-					<span><span className="font-medium">{label}</span>{description ? <span className="mt-0.5 block text-[11px] text-muted-foreground">{description}</span> : null}</span>
+					<span>
+						<span className="font-medium">{label}</span>
+						{description ? <span className="mt-0.5 block text-[11px] text-muted-foreground">{description}</span> : null}
+					</span>
 				</label>
-				{invalid ? <p id={errorId} className="mt-1 text-[11px] text-destructive">Choose yes or no.</p> : null}
+				{invalid ? (
+					<p id={errorId} className="mt-1 text-[11px] text-destructive">
+						{uiText("Choose yes or no.")}
+					</p>
+				) : null}
 			</div>
 		);
 	}
@@ -296,8 +333,13 @@ function FormField({
 	const numeric = property.type === "number" || property.type === "integer";
 	return (
 		<label htmlFor={id} className="block">
-			<span className="text-xs font-medium text-foreground">{label}{required ? " *" : ""}</span>
-			{description ? <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{description}</span> : null}
+			<span className="text-xs font-medium text-foreground">
+				{label}
+				{required ? " *" : ""}
+			</span>
+			{description ? (
+				<span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{description}</span>
+			) : null}
 			<input
 				id={id}
 				type={numeric ? "number" : "text"}
@@ -311,10 +353,19 @@ function FormField({
 				disabled={disabled}
 				aria-invalid={invalid || undefined}
 				aria-describedby={invalid ? errorId : undefined}
-				onChange={(event) => onChange(numeric && event.target.value !== "" ? Number(event.target.value) : event.target.value)}
-				className={cn("mt-1.5 h-9 w-full rounded-lg border bg-background px-3 text-xs text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-logo-accent/40", invalid ? "border-destructive" : "border-border")}
+				onChange={(event) =>
+					onChange(numeric && event.target.value !== "" ? Number(event.target.value) : event.target.value)
+				}
+				className={cn(
+					"mt-1.5 h-9 w-full rounded-lg border bg-background px-3 text-xs text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-logo-accent/40",
+					invalid ? "border-destructive" : "border-border",
+				)}
 			/>
-			{invalid ? <span id={errorId} className="mt-1 block text-[11px] text-destructive">This field is required.</span> : null}
+			{invalid ? (
+				<span id={errorId} className="mt-1 block text-[11px] text-destructive">
+					{uiText("This field is required.")}
+				</span>
+			) : null}
 		</label>
 	);
 }
@@ -329,11 +380,13 @@ function enumOptions(property: Record<string, unknown>): Array<{ value: string; 
 				: [];
 	return source.flatMap((entry) => {
 		if (!isRecord(entry) || typeof entry.const !== "string") return [];
-		return [{
-			value: entry.const,
-			label: typeof entry.title === "string" ? entry.title : entry.const,
-			description: typeof entry.description === "string" ? entry.description : undefined,
-		}];
+		return [
+			{
+				value: entry.const,
+				label: typeof entry.title === "string" ? entry.title : entry.const,
+				description: typeof entry.description === "string" ? entry.description : undefined,
+			},
+		];
 	});
 }
 

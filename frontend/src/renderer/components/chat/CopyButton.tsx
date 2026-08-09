@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { aoBridge } from "../../lib/bridge";
 import { cn } from "../../lib/utils";
+import { uiText } from "../../i18n/localized-ui";
 
 /** Long enough to be noticed, short enough that a second copy reads as a second copy. */
 const CONFIRM_MS = 1400;
@@ -51,7 +52,7 @@ export function CopyButton({
 		<button
 			type="button"
 			onClick={copy}
-			aria-label={copied ? "Copied" : label}
+			aria-label={copied ? uiText("Copied") : label}
 			// Icon-only leaves nothing on screen to explain itself, so the native
 			// tooltip carries the label there and only there.
 			title={compact ? label : undefined}
@@ -65,7 +66,7 @@ export function CopyButton({
 			) : (
 				<Copy aria-hidden="true" className="size-3" />
 			)}
-			{compact ? null : copied ? "Copied" : "Copy"}
+			{compact ? null : uiText(copied ? "Copied" : "Copy")}
 		</button>
 	);
 }

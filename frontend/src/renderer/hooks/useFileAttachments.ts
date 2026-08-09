@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { uiText } from "../i18n/localized-ui";
 
 // Client-side mirror of the backend spawn caps in
 // backend/internal/httpd/controllers/sessions.go (maxAttachments /
@@ -37,8 +38,7 @@ export type FileAttachmentPayload = {
 // still be attached; they render with the generic file icon.
 const SUPPORTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/bmp"]);
 
-export const isSupportedImageAttachment = (type: string) =>
-	SUPPORTED_IMAGE_TYPES.has(type.toLowerCase().trim());
+export const isSupportedImageAttachment = (type: string) => SUPPORTED_IMAGE_TYPES.has(type.toLowerCase().trim());
 
 const readFileAsBase64 = (file: File): Promise<{ dataUrl: string; data: string }> =>
 	new Promise((resolve, reject) => {
@@ -89,20 +89,16 @@ export function useFileAttachments() {
 
 		const errors = new Set<string>();
 		// Block SVG files for security (active content)
-		const blockedFiles = validFiles.filter(
-			(file) => file.type.toLowerCase().trim() === "image/svg+xml",
-		);
+		const blockedFiles = validFiles.filter((file) => file.type.toLowerCase().trim() === "image/svg+xml");
 		if (blockedFiles.length > 0) {
-			errors.add("SVG files are not supported for security reasons.");
+			errors.add(uiText("SVG files are not supported for security reasons."));
 		}
-		const valid = validFiles.filter(
-			(file) => file.type.toLowerCase().trim() !== "image/svg+xml",
-		);
+		const valid = validFiles.filter((file) => file.type.toLowerCase().trim() !== "image/svg+xml");
 
 		// Reject oversized files before the (async) read.
 		const readable = valid.filter((file) => {
 			if (file.size > MAX_ATTACHMENT_BYTES) {
-				errors.add(`Each file must be under ${mb(MAX_ATTACHMENT_BYTES)} MB.`);
+				errors.add(`${uiText("Each file must be under")} ${mb(MAX_ATTACHMENT_BYTES)} MB${uiText(".")}`);
 				return false;
 			}
 			return true;
@@ -110,7 +106,9 @@ export function useFileAttachments() {
 
 		const pendingReads = Promise.all(
 			readable.map((file) =>
-				readFileAsBase64(file).catch(() => null).then((result) => ({ file, result })),
+				readFileAsBase64(file)
+					.catch(() => null)
+					.then((result) => ({ file, result })),
 			),
 		);
 		pendingReadsRef.current.add(pendingReads);
@@ -120,7 +118,7 @@ export function useFileAttachments() {
 		const fresh: FileAttachment[] = [];
 		for (const { file, result } of results) {
 			if (!result) {
-				errors.add(`Some files couldn't be read and were skipped.`);
+				errors.add(uiText("Some files couldn't be read and were skipped."));
 				continue;
 			}
 			const isImage = file.type.startsWith("image/") && isSupportedImageAttachment(file.type);
@@ -141,11 +139,11 @@ export function useFileAttachments() {
 		let total = accepted.reduce((sum, a) => sum + a.bytes, 0);
 		for (const a of fresh) {
 			if (accepted.length >= MAX_ATTACHMENTS) {
-				errors.add(`You can attach up to ${MAX_ATTACHMENTS} files.`);
+				errors.add(`${uiText("You can attach up to")} ${MAX_ATTACHMENTS} ${uiText("files.")}`);
 				break;
 			}
 			if (total + a.bytes > MAX_ATTACHMENTS_BYTES) {
-				errors.add(`Attachments must total under ${mb(MAX_ATTACHMENTS_BYTES)} MB.`);
+				errors.add(`${uiText("Attachments must total under")} ${mb(MAX_ATTACHMENTS_BYTES)} MB${uiText(".")}`);
 				break;
 			}
 			accepted.push(a);
@@ -172,8 +170,7 @@ export function useFileAttachments() {
 	}, []);
 
 	const toPayload = useCallback(
-		(): FileAttachmentPayload[] =>
-			attachments.map(({ mimeType, data }) => ({ mimeType, data })),
+		(): FileAttachmentPayload[] => attachments.map(({ mimeType, data }) => ({ mimeType, data })),
 		[attachments],
 	);
 
@@ -181,8 +178,19 @@ export function useFileAttachments() {
 		while (pendingReadsRef.current.size > 0) {
 			await Promise.allSettled(Array.from(pendingReadsRef.current));
 		}
-		return attachmentsRef.current.map(({ mimeType, data }) => ({ mimeType, data }));
+		return attachmentsRef.current.map(({ mimeType, data }) => ({
+			mimeType,
+			data,
+		}));
 	}, []);
 
-	return { attachments, error, addFiles, remove, clear, toPayload, toSettledPayload };
+	return {
+		attachments,
+		error,
+		addFiles,
+		remove,
+		clear,
+		toPayload,
+		toSettledPayload,
+	};
 }

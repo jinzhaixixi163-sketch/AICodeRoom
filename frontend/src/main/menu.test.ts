@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWindowsAppMenuTemplate } from "./menu";
+import { buildAppMenuTemplate, buildWindowsAppMenuTemplate } from "./menu";
 
 type MenuItem = ReturnType<typeof buildWindowsAppMenuTemplate>[number];
 type SubmenuItem = NonNullable<Extract<MenuItem["submenu"], readonly unknown[]>>[number];
@@ -26,5 +26,16 @@ describe("buildWindowsAppMenuTemplate", () => {
 
 	it("keeps the direct minus accelerator for zoom out", () => {
 		expect(viewSubmenu()).toContainEqual(expect.objectContaining({ accelerator: "Ctrl+-", role: "zoomOut" }));
+	});
+
+	it("localizes the complete macOS menu in Simplified Chinese", () => {
+		const menu = buildAppMenuTemplate({ appName: "AICodeRoom", locale: "zh-CN", platform: "darwin" });
+		expect(menu.map((item) => item.label)).toEqual(["AICodeRoom", "文件", "编辑", "显示", "窗口", "帮助"]);
+		expect(menu[0]?.submenu).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ label: "关于 AICodeRoom", role: "about" }),
+				expect.objectContaining({ label: "退出 AICodeRoom", role: "quit" }),
+			]),
+		);
 	});
 });

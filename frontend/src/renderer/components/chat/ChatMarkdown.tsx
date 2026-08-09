@@ -23,15 +23,7 @@
  * arrives. See `lib/code-highlight.ts` for why it is not tokenized before then.
  */
 
-import {
-	createContext,
-	Fragment,
-	isValidElement,
-	memo,
-	useContext,
-	useState,
-	type ReactNode,
-} from "react";
+import { createContext, Fragment, isValidElement, memo, useContext, useState, type ReactNode } from "react";
 import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { WrapText } from "lucide-react";
@@ -41,6 +33,7 @@ import { isWebLink, openLinkInSystemBrowser } from "../../lib/external-link-poli
 import { HighlightedCode } from "./HighlightedCode";
 import { CopyButton } from "./CopyButton";
 import "./code-theme.css";
+import { uiText } from "../../i18n/localized-ui";
 
 /** GitHub-flavoured markdown: tables, strikethrough, task lists, autolinks. */
 const PLUGINS = [remarkGfm];
@@ -139,8 +132,8 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
 							setWrap(!wrap);
 						}}
 						aria-pressed={wrap}
-						aria-label="Wrap long lines"
-						title="Wrap long lines"
+						aria-label={uiText("Wrap long lines")}
+						title={uiText("Wrap long lines")}
 						className={cn(
 							"flex items-center rounded px-1.5 py-0.5 transition-colors hover:bg-interactive-hover hover:text-foreground",
 							wrap ? "text-accent" : "text-muted-foreground",
@@ -148,7 +141,7 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
 					>
 						<WrapText aria-hidden="true" className="size-3" />
 					</button>
-					<CopyButton text={code} label="Copy code" />
+					<CopyButton text={code} label={uiText("Copy code")} />
 				</div>
 			</div>
 			<pre className="overflow-x-auto px-3 py-2.5">
@@ -173,7 +166,9 @@ function textOf(children: ReactNode): string {
 
 const LANGUAGE_CLASS = /language-([\w+#-]+)/;
 const EMOJI_GRAPHEME = /\p{Extended_Pictographic}|\p{Regional_Indicator}|[#*0-9]\uFE0F?\u20E3/u;
-const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, {
+	granularity: "grapheme",
+});
 
 /** The fence inside a `pre`, or undefined if this is not a fenced block. */
 function fenceOf(children: ReactNode): { code: string; language?: string } | undefined {
@@ -235,19 +230,13 @@ const COMPONENTS: Components = {
 	// Headings step down in size but stay in the conversation's voice — an agent's
 	// "## Findings" is a paragraph label, not a page title.
 	h1: ({ children }) => (
-		<h3 className="mb-1.5 mt-4 text-[15px] font-semibold leading-snug text-foreground first:mt-0">
-			{children}
-		</h3>
+		<h3 className="mb-1.5 mt-4 text-[15px] font-semibold leading-snug text-foreground first:mt-0">{children}</h3>
 	),
 	h2: ({ children }) => (
-		<h4 className="mb-1.5 mt-3.5 text-[14px] font-semibold leading-snug text-foreground first:mt-0">
-			{children}
-		</h4>
+		<h4 className="mb-1.5 mt-3.5 text-[14px] font-semibold leading-snug text-foreground first:mt-0">{children}</h4>
 	),
 	h3: ({ children }) => (
-		<h5 className="mb-1 mt-3 text-[13.5px] font-semibold leading-snug text-foreground first:mt-0">
-			{children}
-		</h5>
+		<h5 className="mb-1 mt-3 text-[13.5px] font-semibold leading-snug text-foreground first:mt-0">{children}</h5>
 	),
 	h4: ({ children }) => (
 		<h6 className="mb-1 mt-3 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">
@@ -258,9 +247,7 @@ const COMPONENTS: Components = {
 	p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{compactEmoji(children)}</p>,
 
 	ul: ({ children }) => <ul className="my-2 ml-4 list-disc space-y-1 first:mt-0">{children}</ul>,
-	ol: ({ children }) => (
-		<ol className="my-2 ml-4 list-decimal space-y-1 first:mt-0">{children}</ol>
-	),
+	ol: ({ children }) => <ol className="my-2 ml-4 list-decimal space-y-1 first:mt-0">{children}</ol>,
 	li: ({ children, className }) => (
 		// A task-list item drops its bullet: the checkbox is the marker.
 		<li className={cn("marker:text-muted-foreground", className?.includes("task-list-item") && "list-none")}>
@@ -275,7 +262,7 @@ const COMPONENTS: Components = {
 				type="checkbox"
 				checked={Boolean(checked)}
 				readOnly
-				aria-label={checked ? "done" : "not done"}
+				aria-label={uiText(checked ? "done" : "not done")}
 				className="mr-1.5 -ml-4 size-3 translate-y-[1px] accent-accent"
 			/>
 		) : null,
@@ -290,9 +277,7 @@ const COMPONENTS: Components = {
 	},
 	// Only inline code reaches here; `pre` above takes every fence.
 	code: ({ children }) => (
-		<code className="rounded bg-surface px-[5px] py-[2px] font-mono text-[11.5px] text-markdown-code">
-			{children}
-		</code>
+		<code className="rounded bg-surface px-[5px] py-[2px] font-mono text-[11.5px] text-markdown-code">{children}</code>
 	),
 
 	// Wide tables scroll inside their own container so the conversation column
@@ -308,14 +293,10 @@ const COMPONENTS: Components = {
 			{compactEmoji(children)}
 		</th>
 	),
-	td: ({ children }) => (
-		<td className="border-b border-border/60 px-2.5 py-1.5 align-top">{compactEmoji(children)}</td>
-	),
+	td: ({ children }) => <td className="border-b border-border/60 px-2.5 py-1.5 align-top">{compactEmoji(children)}</td>,
 
 	blockquote: ({ children }) => (
-		<blockquote className="my-2.5 border-l-2 border-border-strong pl-3 text-muted-foreground">
-			{children}
-		</blockquote>
+		<blockquote className="my-2.5 border-l-2 border-border-strong pl-3 text-muted-foreground">{children}</blockquote>
 	),
 	hr: () => <hr className="my-3 border-border" />,
 	strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
@@ -326,6 +307,10 @@ const COMPONENTS: Components = {
 	a: MarkdownLink,
 
 	img: ({ src, alt }) => (
-		<img src={typeof src === "string" ? src : undefined} alt={alt ?? ""} className="my-2 max-w-full rounded-md border border-border" />
+		<img
+			src={typeof src === "string" ? src : undefined}
+			alt={alt ?? ""}
+			className="my-2 max-w-full rounded-md border border-border"
+		/>
 	),
 };

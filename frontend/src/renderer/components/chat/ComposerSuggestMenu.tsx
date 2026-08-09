@@ -14,6 +14,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "../../lib/utils";
+import { uiText } from "../../i18n/localized-ui";
 import type { Suggestion, TriggerKind } from "./composerSuggest";
 
 export function ComposerSuggestMenu({
@@ -55,9 +56,9 @@ export function ComposerSuggestMenu({
 		>
 			<div className="flex items-baseline justify-between gap-2 border-b border-border px-2.5 py-1.5">
 				<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-					{kind === "skill" ? "Skills" : "Files in this worktree"}
+					{uiText(kind === "skill" ? "Skills" : "Files in this worktree")}
 				</span>
-				<span className="text-[10px] text-muted-foreground">↑↓ · ⏎ select · esc</span>
+				<span className="text-[10px] text-muted-foreground">{uiText("↑↓ · ⏎ select · esc")}</span>
 			</div>
 
 			<ul ref={list} id={id} role="listbox" className="max-h-64 overflow-y-auto py-1">
@@ -85,15 +86,11 @@ export function ComposerSuggestMenu({
 									{kind === "skill" ? `/${item.label}` : item.label}
 								</span>
 								{item.detail ? (
-									<span className="block truncate text-[11px] leading-snug text-muted-foreground">
-										{item.detail}
-									</span>
+									<span className="block truncate text-[11px] leading-snug text-muted-foreground">{item.detail}</span>
 								) : null}
 							</span>
 							{item.badge ? (
-								<span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-									{item.badge}
-								</span>
+								<span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">{item.badge}</span>
 							) : null}
 						</button>
 					</li>
@@ -105,7 +102,7 @@ export function ComposerSuggestMenu({
 				// worktree: a file that is missing because of the cap looks identical to
 				// one that does not exist.
 				<p className="border-t border-border px-2.5 py-1 text-[10px] text-muted-foreground">
-					Showing part of a large worktree — type more to narrow it.
+					{uiText("Showing part of a large worktree — type more to narrow it.")}
 				</p>
 			) : null}
 		</div>

@@ -14,6 +14,7 @@
 import { useState } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { uiText } from "../../i18n/localized-ui";
 import { ActivityRow } from "./ChatTimelineItems";
 import { ACTIVITY_SUMMARY_BUTTON_CLASS, commandCategory } from "./activity-command";
 import type { ConversationActivity } from "../../types/conversation";
@@ -50,17 +51,15 @@ export function ActivityRun({ activities }: { activities: ConversationActivity[]
 				<span className="text-[11.5px] text-muted-foreground">{summarize(activities)}</span>
 				{failed > 0 ? (
 					<span className="text-[11px] text-destructive">
-						{failed} failed
+						{failed} {uiText("failed")}
 					</span>
 				) : null}
 				{cancelled > 0 ? (
 					<span className="text-[11px] text-muted-foreground/70">
-						{cancelled} stopped
+						{cancelled} {uiText("stopped")}
 					</span>
 				) : null}
-				{running ? (
-					<Loader2 aria-hidden="true" className="size-3 animate-spin text-muted-foreground/60" />
-				) : null}
+				{running ? <Loader2 aria-hidden="true" className="size-3 animate-spin text-muted-foreground/60" /> : null}
 				{/* Always visible: the line has to read as openable, or a reader who
 				    wants the detail has no reason to think it is there. */}
 				<ChevronRight
@@ -74,14 +73,19 @@ export function ActivityRun({ activities }: { activities: ConversationActivity[]
 
 			{open ? (
 				<div className="cursor-chat-activity-panel mt-0.5 flex flex-col overflow-hidden rounded-md border border-border">
-					{hierarchy.map((node) => <ActivityTree key={node.activity.id} node={node} />)}
+					{hierarchy.map((node) => (
+						<ActivityTree key={node.activity.id} node={node} />
+					))}
 				</div>
 			) : null}
 		</div>
 	);
 }
 
-type ActivityNode = { activity: ConversationActivity; children: ActivityNode[] };
+type ActivityNode = {
+	activity: ConversationActivity;
+	children: ActivityNode[];
+};
 
 function ActivityTree({ node }: { node: ActivityNode }) {
 	return (
@@ -101,18 +105,22 @@ function NestedAgentRun({ nodes }: { nodes: ActivityNode[] }) {
 			<button
 				type="button"
 				onClick={() => setOpen((current) => !current)}
-				aria-label={`Subagent ${count} ${count === 1 ? "step" : "steps"}`}
+				aria-label={`${uiText("Subagent")} ${count} ${uiText(count === 1 ? "step" : "steps")}`}
 				aria-expanded={open}
 				className="flex min-h-8 w-full items-center gap-2 px-2.5 text-left text-[11px] text-muted-foreground transition-colors hover:bg-interactive-hover"
 			>
 				<ChevronRight aria-hidden="true" className={cn("size-3 transition-transform", open && "rotate-90")} />
-				<span className="font-medium text-foreground/80">Subagent</span>
-				<span>{count} {count === 1 ? "step" : "steps"}</span>
+				<span className="font-medium text-foreground/80">{uiText("Subagent")}</span>
+				<span>
+					{count} {uiText(count === 1 ? "step" : "steps")}
+				</span>
 				{running ? <Loader2 aria-hidden="true" className="ml-auto size-3 animate-spin" /> : null}
 			</button>
 			{open ? (
 				<div className="border-t border-border/70">
-					{nodes.map((node) => <ActivityTree key={node.activity.id} node={node} />)}
+					{nodes.map((node) => (
+						<ActivityTree key={node.activity.id} node={node} />
+					))}
 				</div>
 			) : null}
 		</div>
@@ -136,11 +144,7 @@ function buildHierarchy(activities: ConversationActivity[]): ActivityNode[] {
 	return roots;
 }
 
-function wouldCreateCycle(
-	node: ActivityNode,
-	parent: ActivityNode,
-	byProvider: Map<string, ActivityNode>,
-): boolean {
+function wouldCreateCycle(node: ActivityNode, parent: ActivityNode, byProvider: Map<string, ActivityNode>): boolean {
 	const visited = new Set<ActivityNode>([node]);
 	let current: ActivityNode | undefined = parent;
 	while (current) {
@@ -207,18 +211,18 @@ function summarize(activities: ConversationActivity[]): string {
 	}
 
 	const parts: string[] = [];
-	if (reads > 0) parts.push(`${reads} ${reads === 1 ? "file" : "files"}`);
-	if (searches > 0) parts.push(`${searches} ${searches === 1 ? "search" : "searches"}`);
-	if (vcs > 0) parts.push(`${vcs} git ${vcs === 1 ? "check" : "checks"}`);
-	if (other > 0) parts.push(`${other} ${other === 1 ? "command" : "commands"}`);
-	if (tools > 0) parts.push(`${tools} tool ${tools === 1 ? "call" : "calls"}`);
+	if (reads > 0) parts.push(`${reads} ${uiText(reads === 1 ? "file" : "files")}`);
+	if (searches > 0) parts.push(`${searches} ${uiText(searches === 1 ? "search" : "searches")}`);
+	if (vcs > 0) parts.push(`${vcs} git ${uiText(vcs === 1 ? "check" : "checks")}`);
+	if (other > 0) parts.push(`${other} ${uiText(other === 1 ? "command" : "commands")}`);
+	if (tools > 0) parts.push(`${tools} ${uiText("tool")} ${uiText(tools === 1 ? "call" : "calls")}`);
 	// Said even though nobody was asked, because "the provider decided 3 things for
 	// you" is not something a summary should quietly leave out.
-	if (reviews > 0) parts.push(`${reviews} auto-${reviews === 1 ? "decision" : "decisions"}`);
-	if (plans > 0) parts.push("updated plan");
+	if (reviews > 0) parts.push(`${reviews} auto-${uiText(reviews === 1 ? "decision" : "decisions")}`);
+	if (plans > 0) parts.push(uiText("updated plan"));
 
-	if (parts.length === 0) return `${activities.length} steps`;
+	if (parts.length === 0) return `${activities.length} ${uiText("steps")}`;
 	// "Explored" when the agent was reading or searching; "Ran" when it was doing.
-	const verb = reads > 0 || searches > 0 ? "Explored" : "Ran";
+	const verb = uiText(reads > 0 || searches > 0 ? "Explored" : "Ran");
 	return `${verb} ${parts.join(", ")}`;
 }

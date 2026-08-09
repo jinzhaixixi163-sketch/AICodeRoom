@@ -126,7 +126,7 @@ function MetricCard({ icon: Icon, label, value, optional = false }: { icon: type
 	return (
 		<div className="rounded-lg border border-(--color-border-settings-input) bg-(--color-bg-settings-input) p-3">
 			<div className="flex items-center gap-2 text-settings-muted"><Icon className="size-3.5" /><span className="text-xs">{label}</span></div>
-			<p className="mt-2 font-mono text-base font-semibold text-settings-label">{value === null && optional ? "—" : formatTokenCount(value ?? 0)}</p>
+			<p className="mt-2 font-mono text-base font-semibold text-settings-label">{value === null && optional ? "—" : localizedTokenCount(value ?? 0, t("settings.usage.tokenUnit"))}</p>
 			{value === null && optional ? <p className="mt-1 text-2xs text-settings-muted">{t("settings.usage.notReported")}</p> : null}
 		</div>
 	);
@@ -146,7 +146,7 @@ function ProviderUsage({ overview }: { overview: UsageOverview }) {
 			{rows.length === 0 ? <p className="mt-3 text-xs text-settings-muted">{t("settings.usage.empty")}</p> : (
 				<div className="mt-3 space-y-3">{rows.map((row) => (
 					<div key={row.name}>
-						<div className="flex items-center justify-between gap-3 text-xs"><span className="truncate text-settings-label">{row.name}<span className="ml-2 text-2xs text-settings-muted">{row.models.join(" · ")}</span></span><span className="shrink-0 font-mono text-settings-label">{formatTokenCount(row.total)}</span></div>
+						<div className="flex items-center justify-between gap-3 text-xs"><span className="truncate text-settings-label">{row.name}<span className="ml-2 text-2xs text-settings-muted">{row.models.join(" · ")}</span></span><span className="shrink-0 font-mono text-settings-label">{localizedTokenCount(row.total, t("settings.usage.tokenUnit"))}</span></div>
 						<div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${(row.total / max) * 100}%` }} /></div>
 					</div>
 				))}</div>
@@ -165,7 +165,7 @@ function SessionUsage({ rows }: { rows: Array<{ usage: { sessionId: string; tota
 				<div className="mt-2 divide-y divide-(--color-border-settings-input)">{rows.map(({ usage, session }) => (
 					<div className="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-3 py-2.5" key={usage.sessionId}>
 						<div className="min-w-0"><div className="flex items-center gap-1.5"><p className="truncate text-xs text-settings-label">{session?.title ?? usage.sessionId}</p>{usage.incomplete ? <AlertTriangle aria-label={t("settings.usage.incomplete")} className="size-3 shrink-0 text-amber-500" /> : null}</div><p className="mt-0.5 truncate text-2xs text-settings-muted">{session ? `${session.workspaceName} · ${formatHarnessName(session.provider)}` : t("settings.usage.unknownSession")}</p><div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-sky-500" style={{ width: `${(usage.totalTokens / max) * 100}%` }} /></div></div>
-						<span className="self-center text-right font-mono text-xs text-settings-label">{formatTokenCount(usage.totalTokens)}</span>
+						<span className="self-center text-right font-mono text-xs text-settings-label">{localizedTokenCount(usage.totalTokens, t("settings.usage.tokenUnit"))}</span>
 					</div>
 				))}</div>
 			)}
@@ -174,7 +174,12 @@ function SessionUsage({ rows }: { rows: Array<{ usage: { sessionId: string; tota
 }
 
 function LegendDot({ className, label, value }: { className: string; label: string; value: number }) {
-	return <span className="inline-flex items-center gap-1.5"><span className={cn("size-2 rounded-full", className)} />{label} <span className="font-mono text-settings-label">{formatTokenCount(value)}</span></span>;
+	const { t } = useTranslation();
+	return <span className="inline-flex items-center gap-1.5"><span className={cn("size-2 rounded-full", className)} />{label} <span className="font-mono text-settings-label">{localizedTokenCount(value, t("settings.usage.tokenUnit"))}</span></span>;
+}
+
+function localizedTokenCount(value: number, unit: string): string {
+	return formatTokenCount(value).replace(/ tok$/, ` ${unit}`);
 }
 
 function UsageStateCard({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "error" }) {

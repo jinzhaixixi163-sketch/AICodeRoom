@@ -20,10 +20,13 @@ const approvedLiterals: Record<string, readonly string[]> = {
 		"Local: http://localhost:5173/",
 	],
 	"components/CenterPane.tsx": ["px"],
+	"components/chat/ChatTimelineItems.tsx": ["&minus;", "&rarr;"],
+	"components/chat/ChatWorkspace.tsx": ["px"],
 	"components/CreateProjectFlow.tsx": ["my-workspace/", "web-app", "main"],
 	"components/DaemonStartupLoader.tsx": ["AICodeRoom"],
 	"components/ProjectSettingsForm.tsx": [
-		"main", "ao",
+		"main",
+		"ao",
 		"No workflow settings for scratch projects.",
 		"Tracker intake is not available for scratch projects.",
 	],
@@ -46,26 +49,6 @@ const approvedLiterals: Record<string, readonly string[]> = {
 	"components/settings/UpdatesSection.tsx": ["PR #"],
 };
 
-// The Chat surface predates this coverage gate and is intentionally being
-// localized as a follow-up. Keep the deferral scoped to the new surface so
-// hardcoded chrome elsewhere in the renderer still fails this test.
-const deferredLocalizationFiles = new Set([
-	"components/SessionInterfaceSwitch.tsx",
-	"components/chat/ActivityRun.tsx",
-	"components/chat/ChatComposer.tsx",
-	"components/chat/ChatMarkdown.tsx",
-	"components/chat/ChatStatusBanners.tsx",
-	"components/chat/ChatTimelineItems.tsx",
-	"components/chat/ChatWorkspace.tsx",
-	"components/chat/ComposerSuggestMenu.tsx",
-	"components/chat/ContextMeter.tsx",
-	"components/chat/CopyButton.tsx",
-	"components/chat/ElicitationCard.tsx",
-	"components/chat/SessionChatSurface.tsx",
-	"components/chat/TurnPlan.tsx",
-	"components/chat/TurnSettingsBar.tsx",
-]);
-
 function rendererFiles(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const absolute = path.join(directory, entry.name);
@@ -82,10 +65,7 @@ function normalized(value: string): string {
 function literalBranches(expression: ts.Expression): string[] {
 	if (ts.isStringLiteralLike(expression)) return [expression.text];
 	if (ts.isTemplateExpression(expression)) {
-		return [
-			expression.head.text,
-			...expression.templateSpans.flatMap((span) => [span.literal.text]),
-		];
+		return [expression.head.text, ...expression.templateSpans.flatMap((span) => [span.literal.text])];
 	}
 	if (ts.isConditionalExpression(expression)) {
 		return [...literalBranches(expression.whenTrue), ...literalBranches(expression.whenFalse)];
@@ -103,7 +83,6 @@ function potentialDisplayText(value: string): boolean {
 
 function approved(file: string, value: string): boolean {
 	const relative = path.relative(rendererDirectory, file).replace(/\\/g, "/");
-	if (deferredLocalizationFiles.has(relative)) return true;
 	return approvedLiterals[relative]?.includes(value) ?? false;
 }
 

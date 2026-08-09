@@ -61,6 +61,7 @@ import {
 } from "../../hooks/useFileAttachments";
 import { File } from "lucide-react";
 import type { ChatSkill } from "../../types/conversation";
+import { uiText } from "../../i18n/localized-ui";
 
 /**
  * Tell the agent to open the attached files. Mirrors the wording spawn uses for a task
@@ -70,9 +71,7 @@ import type { ChatSkill } from "../../types/conversation";
 function withAttachmentReferences(text: string, paths: string[]): string {
 	if (paths.length === 0) return text;
 	const lead = text.trim() === "" ? "" : `${text}\n\n`;
-	return `${lead}Attached files (read these files in the workspace):\n${paths
-		.map((path) => `- ${path}`)
-		.join("\n")}`;
+	return `${lead}Attached files (read these files in the workspace):\n${paths.map((path) => `- ${path}`).join("\n")}`;
 }
 
 export function ChatComposer({
@@ -163,9 +162,7 @@ export function ChatComposer({
 
 		const contentHeight = node.scrollHeight;
 		const maxHeight = Number.parseFloat(window.getComputedStyle(node).maxHeight);
-		const cappedHeight = Number.isFinite(maxHeight)
-			? Math.min(contentHeight, maxHeight)
-			: contentHeight;
+		const cappedHeight = Number.isFinite(maxHeight) ? Math.min(contentHeight, maxHeight) : contentHeight;
 
 		node.style.height = `${cappedHeight}px`;
 		node.style.overflowY = contentHeight > cappedHeight ? "auto" : "hidden";
@@ -373,9 +370,7 @@ export function ChatComposer({
 		// longer the one under the caret, so a fresh `/` or `@` opens a menu again
 		// without the user having to guess why the last one stayed shut.
 		const next = findActiveTrigger(value, nextCaret);
-		setDismissedAt((current) =>
-			current !== null && next?.start === current ? current : null,
-		);
+		setDismissedAt((current) => (current !== null && next?.start === current ? current : null));
 	}
 
 	/** Caret moves that are not edits: arrow keys, clicks, selection changes. */
@@ -390,8 +385,7 @@ export function ChatComposer({
 		if (files.length === 0) return;
 		// The paste is only claimed when there is no text alongside the image: a copy
 		// carrying both should still paste its text.
-		const hasText =
-			typeof clipboard?.getData === "function" && clipboard.getData("text/plain") !== "";
+		const hasText = typeof clipboard?.getData === "function" && clipboard.getData("text/plain") !== "";
 		if (!hasText) event.preventDefault();
 		void fileAttachments.addFiles(files);
 	}
@@ -435,18 +429,14 @@ export function ChatComposer({
 			) : null}
 
 			{staged ? (
-				<ul className="flex flex-wrap gap-1.5" aria-label="Attached files">
+				<ul className="flex flex-wrap gap-1.5" aria-label={uiText("Attached files")}>
 					{fileAttachments.attachments.map((file) => (
 						<li
 							key={file.id}
 							className="flex items-center gap-1.5 rounded border border-border bg-background py-0.5 pl-0.5 pr-1"
 						>
 							{file.dataUrl ? (
-								<img
-									src={file.dataUrl}
-									alt=""
-									className="size-6 rounded-sm object-cover"
-								/>
+								<img src={file.dataUrl} alt="" className="size-6 rounded-sm object-cover" />
 							) : (
 								<div className="flex size-6 items-center justify-center rounded-sm bg-surface">
 									<File aria-hidden="true" className="size-3.5 text-muted-foreground" />
@@ -458,7 +448,7 @@ export function ChatComposer({
 							<button
 								type="button"
 								onClick={() => fileAttachments.remove(file.id)}
-								aria-label={`Remove ${file.name}`}
+								aria-label={`${uiText("Remove")} ${file.name}`}
 								className="text-muted-foreground hover:text-foreground"
 							>
 								<X aria-hidden="true" className="size-3" />
@@ -478,7 +468,7 @@ export function ChatComposer({
 				onPaste={onPaste}
 				rows={2}
 				disabled={disabled}
-				aria-label="Message the agent"
+				aria-label={uiText("Message the agent")}
 				role="combobox"
 				aria-expanded={menuOpen}
 				aria-controls={menuOpen ? menuId : undefined}
@@ -486,21 +476,21 @@ export function ChatComposer({
 				aria-autocomplete="list"
 				placeholder={
 					disabled
-						? "The controller is not connected"
+						? uiText("The controller is not connected")
 						: steering
-							? "Agent is working — this goes into the turn it is running"
+							? uiText("Agent is working — this goes into the turn it is running")
 							: willQueue
-								? "Agent is working — this sends when it finishes"
+								? uiText("Agent is working — this sends when it finishes")
 								: skills.length > 0
-									? "Ask the agent…  /  for skills, @ for files"
-									: "Ask the agent…  @ for files"
+									? uiText("Ask the agent… / for skills, @ for files")
+									: uiText("Ask the agent… @ for files")
 				}
 				className="chat-composer-scrollbar max-h-40 min-h-[3.25rem] w-full resize-none overflow-y-hidden overscroll-contain bg-transparent px-1.5 py-1.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-passive disabled:opacity-50"
 			/>
 
 			{attachmentError ? (
 				<p role="alert" className="px-1.5 text-[11px] leading-snug text-destructive">
-					{attachmentError}
+					{uiText(attachmentError)}
 				</p>
 			) : null}
 
@@ -509,18 +499,16 @@ export function ChatComposer({
 			    in a moment" applies. */}
 			{steerRefusal ? (
 				<p role="status" className="px-1.5 text-[11px] leading-snug text-warning">
-					{steerRefusal}
+					{uiText(steerRefusal)}
 				</p>
 			) : null}
 
-			{canSteer && onSteer ? (
-				<DeliveryChoice value={delivery} onChange={setDelivery} disabled={steerPending} />
-			) : null}
+			{canSteer && onSteer ? <DeliveryChoice value={delivery} onChange={setDelivery} disabled={steerPending} /> : null}
 
 			<div className="flex min-h-8 items-end justify-between gap-3">
 				<div
 					role="group"
-					aria-label="Message tools"
+					aria-label={uiText("Message tools")}
 					className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
 				>
 					{canAttach ? (
@@ -542,39 +530,33 @@ export function ChatComposer({
 								size="sm"
 								disabled={disabled}
 								onClick={() => filePicker.current?.click()}
-								aria-label="Attach a file"
-								title="Attach a file"
+								aria-label={uiText("Attach a file")}
+								title={uiText("Attach a file")}
 								className="size-8 shrink-0 p-0"
 							>
 								<Paperclip aria-hidden="true" className="size-4 text-muted-foreground" />
 							</Button>
 						</>
 					) : null}
-					{canAttach && settings ? (
-						<span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border" />
-					) : null}
+					{canAttach && settings ? <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border" /> : null}
 					{settings}
 				</div>
 
-				<div
-					role="group"
-					aria-label="Send message controls"
-					className="flex shrink-0 items-center gap-2"
-				>
+				<div role="group" aria-label={uiText("Send message controls")} className="flex shrink-0 items-center gap-2">
 					<span className="hidden text-[11px] text-muted-foreground sm:inline">
 						{menuOpen
-							? "Enter to insert"
+							? uiText("Enter to insert")
 							: steering
-								? "Enter to steer"
+								? uiText("Enter to steer")
 								: willQueue
-									? "Enter to queue"
-									: "Enter to send"}
+									? uiText("Enter to queue")
+									: uiText("Enter to send")}
 					</span>
 					<Button
 						type="submit"
 						size="icon-sm"
 						disabled={!canSend}
-						aria-label={steering ? "Steer the running turn" : "Send message"}
+						aria-label={uiText(steering ? "Steer the running turn" : "Send message")}
 						className="size-8 rounded-lg border-logo-accent bg-logo-accent text-logo-accent-foreground hover:bg-logo-accent-bright focus-visible:ring-logo-accent/45"
 					>
 						{steerPending ? (
@@ -614,7 +596,7 @@ function DeliveryChoice({
 	return (
 		<div
 			role="group"
-			aria-label="Where this message goes while the agent is working"
+			aria-label={uiText("Where this message goes while the agent is working")}
 			className="flex items-center gap-1 px-1.5"
 		>
 			{(["queue", "steer"] as const).map((option) => (
@@ -626,8 +608,8 @@ function DeliveryChoice({
 					aria-pressed={value === option}
 					title={
 						option === "steer"
-							? "Send this into the running turn. The agent keeps its context and its work in flight."
-							: "Hold this until the turn ends, then send it as a new message."
+							? uiText("Send this into the running turn. The agent keeps its context and its work in flight.")
+							: uiText("Hold this until the turn ends, then send it as a new message.")
 					}
 					className={cn(
 						"rounded px-1.5 py-0.5 text-[11px] transition-colors disabled:opacity-50",
@@ -636,7 +618,7 @@ function DeliveryChoice({
 							: "text-muted-foreground hover:bg-interactive-hover hover:text-foreground",
 					)}
 				>
-					{option === "steer" ? "Steer this turn" : "Queue for next"}
+					{uiText(option === "steer" ? "Steer this turn" : "Queue for next")}
 				</button>
 			))}
 		</div>

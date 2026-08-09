@@ -22,6 +22,7 @@ import {
 import { useSessionBrowserLink } from "../../hooks/useSessionBrowserLink";
 import { can } from "../../types/conversation";
 import type { WorkspaceSession } from "../../types/workspace";
+import { uiText } from "../../i18n/localized-ui";
 
 export function SessionChatSurface({
 	session,
@@ -39,27 +40,13 @@ export function SessionChatSurface({
 	/** The target controller is being installed by an interface handoff. */
 	controllerTransitioning?: boolean;
 }) {
-	const {
-		snapshot,
-		isLoading,
-		unavailable,
-		error,
-		hasOlder,
-		isLoadingOlder,
-		loadOlder,
-	} = useConversation(session.id);
+	const { snapshot, isLoading, unavailable, error, hasOlder, isLoadingOlder, loadOlder } = useConversation(session.id);
 	const commands = useConversationCommands(session.id);
 	const hasProviderConfig = Boolean(snapshot && can(snapshot, "config_options"));
 	// Only asked for once the conversation is actually readable: the catalog comes
 	// from the live controller, so there is nothing to fetch before then.
-	const { models } = useConversationModels(
-		session.id,
-		Boolean(snapshot) && !hasProviderConfig,
-	);
-	const configOptions = useConversationConfigOptions(
-		session.id,
-		hasProviderConfig,
-	);
+	const { models } = useConversationModels(session.id, Boolean(snapshot) && !hasProviderConfig);
+	const configOptions = useConversationConfigOptions(session.id, hasProviderConfig);
 	const { skills } = useConversationSkills(session.id, Boolean(snapshot));
 	const { paths, truncated } = useWorkspaceFilePaths(session.id, Boolean(snapshot));
 	const stageAttachments = useStageAttachments(session.id);
@@ -69,7 +56,7 @@ export function SessionChatSurface({
 		return (
 			<Centered>
 				<Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
-				<span className="text-xs text-muted-foreground">Loading conversation…</span>
+				<span className="text-xs text-muted-foreground">{uiText("Loading conversation…")}</span>
 			</Centered>
 		);
 	}
@@ -82,12 +69,12 @@ export function SessionChatSurface({
 		return (
 			<Centered>
 				<AlertTriangle aria-hidden="true" className="size-4 text-warning" />
-				<strong className="text-sm text-foreground">Conversation unavailable</strong>
+				<strong className="text-sm text-foreground">{uiText("Conversation unavailable")}</strong>
 				<p className="max-w-sm text-center text-xs leading-relaxed text-muted-foreground">
-					{unavailable.message}
+					{uiText(unavailable.message)}
 				</p>
 				<p className="max-w-sm text-center text-xs leading-relaxed text-muted-foreground">
-					The worktree is untouched. Open a shell from the inspector to work in it directly.
+					{uiText("The worktree is untouched. Open a shell from the inspector to work in it directly.")}
 				</p>
 			</Centered>
 		);
@@ -98,7 +85,7 @@ export function SessionChatSurface({
 			<Centered>
 				<AlertTriangle aria-hidden="true" className="size-4 text-destructive" />
 				<p className="max-w-sm text-center text-xs leading-relaxed text-muted-foreground">
-					{error ?? "Could not load this conversation."}
+					{uiText(error ?? "Could not load this conversation.")}
 				</p>
 			</Centered>
 		);
@@ -174,9 +161,5 @@ export function SessionChatSurface({
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-	return (
-		<div className="flex h-full flex-col items-center justify-center gap-2 bg-background px-6">
-			{children}
-		</div>
-	);
+	return <div className="flex h-full flex-col items-center justify-center gap-2 bg-background px-6">{children}</div>;
 }

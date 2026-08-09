@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import type { AgentStatusTone } from "../../lib/agent-select-options";
 import { cn } from "../../lib/utils";
+import { uiText } from "../../i18n/localized-ui";
 import { AgentAvatar } from "../AgentAvatar";
 
 const STATUS_TONE_CLASS: Record<AgentStatusTone, string> = {
@@ -33,7 +34,7 @@ export function AgentSelectMenuItem({
 			)}
 			<span className="min-w-0 flex-1 truncate">{label}</span>
 			{status ? (
-				<span className={cn("shrink-0 text-caption", STATUS_TONE_CLASS[statusTone ?? "muted"])}>{status}</span>
+				<span className={cn("shrink-0 text-caption", STATUS_TONE_CLASS[statusTone ?? "muted"])}>{uiText(status)}</span>
 			) : null}
 			{selected ? <Check className="size-3 shrink-0 text-settings-label" aria-hidden="true" /> : null}
 		</span>

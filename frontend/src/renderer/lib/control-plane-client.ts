@@ -1,4 +1,5 @@
 import { aoBridge } from "./bridge";
+import { uiText } from "../i18n/localized-ui";
 
 export type AccountUser = {
 	id: string;
@@ -44,9 +45,13 @@ export class ControlPlaneError extends Error {
 const baseUrl = (import.meta.env.VITE_AICODEROOM_API_URL || "http://127.0.0.1:8788").replace(/\/+$/, "");
 const rendererTestMode = import.meta.env.MODE === "test";
 
-async function request<T>(path: string, options: { method?: string; body?: unknown; authenticated?: boolean } = {}): Promise<T> {
+async function request<T>(
+	path: string,
+	options: { method?: string; body?: unknown; authenticated?: boolean } = {},
+): Promise<T> {
 	const token = options.authenticated === false ? null : await aoBridge.account.getToken();
-	if (options.authenticated !== false && !token) throw new ControlPlaneError("Please sign in", "authentication_required", 401);
+	if (options.authenticated !== false && !token)
+		throw new ControlPlaneError(uiText("Please sign in"), "authentication_required", 401);
 	let response: Response;
 	try {
 		response = await fetch(`${baseUrl}${path}`, {
@@ -59,11 +64,15 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
 			body: options.body === undefined ? undefined : JSON.stringify(options.body),
 		});
 	} catch {
-		throw new ControlPlaneError("AICodeRoom Server is unavailable", "server_unavailable");
+		throw new ControlPlaneError(uiText("AICodeRoom Server is unavailable"), "server_unavailable");
 	}
 	const payload = (await response.json().catch(() => ({}))) as ApiErrorBody & T;
 	if (!response.ok) {
-		throw new ControlPlaneError(payload.error?.message || "Request failed", payload.error?.code, response.status);
+		throw new ControlPlaneError(
+			uiText(payload.error?.message || "Request failed"),
+			payload.error?.code,
+			response.status,
+		);
 	}
 	return payload;
 }
@@ -115,7 +124,13 @@ export async function ensureControlPlaneProject(input: {
 	repositoryUrl?: string;
 }): Promise<AccountProject> {
 	if (rendererTestMode) {
-		return { id: `test:${input.clientProjectId}`, name: input.name, sourceKind: "local", clientProjectId: input.clientProjectId, role: "owner" };
+		return {
+			id: `test:${input.clientProjectId}`,
+			name: input.name,
+			sourceKind: "local",
+			clientProjectId: input.clientProjectId,
+			role: "owner",
+		};
 	}
 	return (
 		await request<{ project: AccountProject }>("/v1/projects", {
@@ -143,7 +158,8 @@ export async function getProjectBackupSettings(projectId: string): Promise<Proje
 			lastError: null,
 		};
 	}
-	return (await request<{ backup: ProjectBackupSettings }>(`/v1/projects/${encodeURIComponent(projectId)}/backup`)).backup;
+	return (await request<{ backup: ProjectBackupSettings }>(`/v1/projects/${encodeURIComponent(projectId)}/backup`))
+		.backup;
 }
 
 export async function updateProjectBackupSettings(
@@ -175,18 +191,32 @@ export async function createControlPlaneTask(input: {
 	aoSessionId?: string;
 }): Promise<string> {
 	if (rendererTestMode) return `test-task:${input.aoSessionId ?? "draft"}`;
-	const project = await ensureControlPlaneProject({ clientProjectId: input.clientProjectId, name: input.projectName });
+	const project = await ensureControlPlaneProject({
+		clientProjectId: input.clientProjectId,
+		name: input.projectName,
+	});
 	const result = await request<{ task: { id: string } }>(`/v1/projects/${encodeURIComponent(project.id)}/tasks`, {
 		method: "POST",
-		body: { title: input.title, description: input.description, aoSessionId: input.aoSessionId },
+		body: {
+			title: input.title,
+			description: input.description,
+			aoSessionId: input.aoSessionId,
+		},
 	});
 	return result.task.id;
 }
 
 export async function updateControlPlaneTask(
 	taskId: string,
-	input: { status: "queued" | "running" | "needs_input" | "completed" | "failed" | "cancelled"; aoSessionId?: string; resultSummary?: string },
+	input: {
+		status: "queued" | "running" | "needs_input" | "completed" | "failed" | "cancelled";
+		aoSessionId?: string;
+		resultSummary?: string;
+	},
 ): Promise<void> {
 	if (rendererTestMode) return;
-	await request(`/v1/tasks/${encodeURIComponent(taskId)}`, { method: "PATCH", body: input });
+	await request(`/v1/tasks/${encodeURIComponent(taskId)}`, {
+		method: "PATCH",
+		body: input,
+	});
 }

@@ -3,9 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { apiClient, apiErrorMessage } from "../lib/api-client";
 import { aoBridge } from "../lib/bridge";
 import { workspaceQueryKey } from "./useWorkspaceQuery";
+import { uiText } from "../i18n/localized-ui";
 
 export type RestoreSessionResult =
-	{ status: "success" } | { status: "not_resumable"; message: string } | { status: "error"; message: string };
+	| { status: "success" }
+	| { status: "not_resumable"; message: string }
+	| { status: "error"; message: string };
 
 export function useRestoreSession(): (sessionId: string) => Promise<RestoreSessionResult> {
 	const queryClient = useQueryClient();
@@ -18,7 +21,7 @@ export function useRestoreSession(): (sessionId: string) => Promise<RestoreSessi
 				});
 				if (error) {
 					const code = (error as { code?: string }).code;
-					const message = apiErrorMessage(error, "Unable to restore session");
+					const message = uiText(apiErrorMessage(error, "Unable to restore session"));
 					if (code === "SESSION_NOT_RESUMABLE") {
 						return { status: "not_resumable", message };
 					}
@@ -29,8 +32,10 @@ export function useRestoreSession(): (sessionId: string) => Promise<RestoreSessi
 					void aoBridge.notifications
 						.show({
 							id: `restore-fallback:${sessionId}:${Date.now()}`,
-							title: "Started from saved prompt",
-							body: "AO could not resume the native agent session, so it started a new conversation from the saved prompt.",
+							title: uiText("Started from saved prompt"),
+							body: uiText(
+								"AO could not resume the native agent session, so it started a new conversation from the saved prompt.",
+							),
 						})
 						.catch((err) => {
 							console.warn("Unable to show restore fallback notification", err);
@@ -40,7 +45,7 @@ export function useRestoreSession(): (sessionId: string) => Promise<RestoreSessi
 			} catch (err) {
 				return {
 					status: "error",
-					message: err instanceof Error ? err.message : "Unable to restore session",
+					message: uiText(err instanceof Error ? err.message : "Unable to restore session"),
 				};
 			}
 		},

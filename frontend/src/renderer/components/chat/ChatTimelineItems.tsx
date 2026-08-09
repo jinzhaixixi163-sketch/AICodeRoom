@@ -46,16 +46,13 @@ const activityIcon: Record<ActivityKind, typeof SquareTerminal> = {
 	user_input: Keyboard,
 };
 import { cn } from "../../lib/utils";
+import { uiText } from "../../i18n/localized-ui";
 import { caretNotation, stripAnsi } from "../../lib/ansi";
 import { getApiBaseUrl } from "../../lib/api-client";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { HighlightedCode } from "./HighlightedCode";
 import { CopyButton } from "./CopyButton";
-import {
-	ACTIVITY_SUMMARY_BUTTON_CLASS,
-	commandCategory,
-	exploredFileCount,
-} from "./activity-command";
+import { ACTIVITY_SUMMARY_BUTTON_CLASS, commandCategory, exploredFileCount } from "./activity-command";
 import { Button } from "../ui/button";
 import {
 	fileChangeFiles,
@@ -87,7 +84,10 @@ const ATTACHMENT_REFERENCE_BLOCK =
 const STAGED_ATTACHMENT_PATH = /^\.ao\/attachments\/(?:attachment|image)-[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const IMAGE_ATTACHMENT_PATH = /\.(?:png|jpe?g|gif|webp|bmp)$/i;
 
-function humanMessageParts(text: string): { body: string; attachments: string[] } {
+function humanMessageParts(text: string): {
+	body: string;
+	attachments: string[];
+} {
 	const match = ATTACHMENT_REFERENCE_BLOCK.exec(text);
 	if (!match?.[1]) return { body: text, attachments: [] };
 
@@ -167,10 +167,7 @@ export function HumanMessage({
 			>
 				{body ? <p className="whitespace-pre-wrap text-pretty">{body}</p> : null}
 				{attachments.length > 0 ? (
-					<ul
-						aria-label="Attached files"
-						className={cn("flex max-w-full flex-wrap gap-2", body && "mt-2")}
-					>
+					<ul aria-label={uiText("Attached files")} className={cn("flex max-w-full flex-wrap gap-2", body && "mt-2")}>
 						{attachments.map((path) => {
 							const name = attachmentName(path);
 							return IMAGE_ATTACHMENT_PATH.test(path) ? (
@@ -197,11 +194,9 @@ export function HumanMessage({
 				) : null}
 			</div>
 			{queued ? (
-				<span className="text-[11px] text-muted-foreground">Queued · sends when the agent finishes</span>
+				<span className="text-[11px] text-muted-foreground">{uiText("Queued · sends when the agent finishes")}</span>
 			) : null}
-			{message.delivery && message.delivery !== "accepted" ? (
-				<DeliveryNote state={message.delivery} />
-			) : null}
+			{message.delivery && message.delivery !== "accepted" ? <DeliveryNote state={message.delivery} /> : null}
 		</div>
 	);
 }
@@ -213,25 +208,19 @@ export function HumanMessage({
 export function OriginMessage({ message }: { message: ConversationMessage }) {
 	const longReport = message.text.length > ORIGIN_REPORT_COLLAPSE_AT;
 	const [expanded, setExpanded] = useState(false);
-	const preview = longReport
-		? `${message.text.slice(0, ORIGIN_REPORT_PREVIEW_LENGTH).trimEnd()}…`
-		: message.text;
+	const preview = longReport ? `${message.text.slice(0, ORIGIN_REPORT_PREVIEW_LENGTH).trimEnd()}…` : message.text;
 
 	return (
 		<div className="cursor-chat-origin-message rounded-md border border-border border-l-2 border-l-logo-accent/60 px-3.5 py-2.5">
 			<div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
 				<CircleAlert aria-hidden="true" className="size-3.5 shrink-0 text-logo-accent" />
 				<span className="truncate">{message.senderLabel ?? message.origin}</span>
-				<span className="ml-auto shrink-0 font-normal tabular-nums">
-					{formatTime(message.createdAt)}
-				</span>
+				<span className="ml-auto shrink-0 font-normal tabular-nums">{formatTime(message.createdAt)}</span>
 			</div>
 			{longReport && expanded ? (
 				<ChatMarkdown text={message.text} muted />
 			) : (
-				<p className={cn("text-sm leading-relaxed text-muted-foreground", longReport && "line-clamp-3")}>
-					{preview}
-				</p>
+				<p className={cn("text-sm leading-relaxed text-muted-foreground", longReport && "line-clamp-3")}>{preview}</p>
 			)}
 			{longReport ? (
 				<button
@@ -240,11 +229,8 @@ export function OriginMessage({ message }: { message: ConversationMessage }) {
 					aria-expanded={expanded}
 					className="mt-2 flex items-center gap-1 text-[11px] font-medium text-logo-accent transition-colors hover:text-markdown-link-hover"
 				>
-					<ChevronRight
-						aria-hidden="true"
-						className={cn("size-3 transition-transform", expanded && "rotate-90")}
-					/>
-					{expanded ? "Hide report" : "Show full report"}
+					<ChevronRight aria-hidden="true" className={cn("size-3 transition-transform", expanded && "rotate-90")} />
+					{uiText(expanded ? "Hide report" : "Show full report")}
 				</button>
 			) : null}
 		</div>
@@ -271,15 +257,15 @@ export function AssistantMessage({
 			<ChatMarkdown text={message.text} streaming={message.streaming} />
 			{visiblyStreaming ? (
 				hasText ? (
-					<span aria-label="still writing" className="sr-only" />
+					<span aria-label={uiText("still writing")} className="sr-only" />
 				) : (
 					<span
 						role="status"
-						aria-label="still writing"
+						aria-label={uiText("still writing")}
 						className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"
 					>
 						<Loader2 aria-hidden="true" className="size-3 animate-spin" />
-						Writing…
+						{uiText("Writing…")}
 					</span>
 				)
 			) : showCopy ? (
@@ -288,12 +274,7 @@ export function AssistantMessage({
 				<div className="flex h-[18px] items-center opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover/message:opacity-100">
 					{/* The stored markdown, not a re-serialization of what was rendered:
 					    pasting it into an editor has to give back what the agent wrote. */}
-					<CopyButton
-						text={message.text}
-						label="Copy message as markdown"
-						compact
-						className="-ml-1.5"
-					/>
+					<CopyButton text={message.text} label={uiText("Copy message as markdown")} compact className="-ml-1.5" />
 				</div>
 			) : null}
 		</div>
@@ -320,7 +301,7 @@ function DeliveryNote({ state }: { state: DeliveryState }) {
 				state === "uncertain" || state === "failed" ? "text-warning" : "text-muted-foreground",
 			)}
 		>
-			{copy[state]}
+			{uiText(copy[state])}
 		</span>
 	);
 }
@@ -361,9 +342,7 @@ function GenericActivityRow({ activity }: { activity: ConversationActivity }) {
 	const Icon = activityIcon[activity.activityKind] ?? SquareTerminal;
 	const detail = activity.detail;
 	const files = fileChangeFiles(activity);
-	const hasBody = Boolean(
-		detail?.output || detail?.reason || detail?.text || detail?.terminalInput || files.length,
-	);
+	const hasBody = Boolean(detail?.output || detail?.reason || detail?.text || detail?.terminalInput || files.length);
 	const { label, path } = splitSummary(activity);
 	const compactCommand = activity.activityKind === "command";
 
@@ -400,31 +379,20 @@ function GenericActivityRow({ activity }: { activity: ConversationActivity }) {
 				<strong
 					className={cn(
 						"shrink-0",
-						compactCommand
-							? "text-[11.5px] font-normal text-muted-foreground"
-							: "font-medium",
-						!compactCommand &&
-							(activity.status === "failed" ? "text-destructive" : "text-foreground"),
+						compactCommand ? "text-[11.5px] font-normal text-muted-foreground" : "font-medium",
+						!compactCommand && (activity.status === "failed" ? "text-destructive" : "text-foreground"),
 					)}
 				>
 					{label}
 				</strong>
 				{path ? (
-					<span
-						className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-muted-foreground"
-						title={path}
-					>
+					<span className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-muted-foreground" title={path}>
 						{path}
 					</span>
 				) : compactCommand ? null : (
 					<span className="flex-1" />
 				)}
-				<ActivityState
-					activity={activity}
-					open={open}
-					hasBody={hasBody}
-					showDisclosure={!compactCommand}
-				/>
+				<ActivityState activity={activity} open={open} hasBody={hasBody} showDisclosure={!compactCommand} />
 				{compactCommand && hasBody ? (
 					<ChevronRight
 						aria-hidden="true"
@@ -445,10 +413,7 @@ function GenericActivityRow({ activity }: { activity: ConversationActivity }) {
 						</p>
 					) : null}
 					{detail?.terminalInput ? (
-						<TerminalInput
-							text={detail.terminalInput}
-							truncated={detail.terminalInputTruncated}
-						/>
+						<TerminalInput text={detail.terminalInput} truncated={detail.terminalInputTruncated} />
 					) : null}
 					{detail?.output ? <CommandOutput activity={activity} /> : null}
 				</div>
@@ -476,14 +441,14 @@ function TerminalInput({ text, truncated }: { text: string; truncated?: boolean 
 		<div className="flex flex-col gap-1">
 			<span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
 				<Keyboard aria-hidden="true" className="size-3" />
-				Agent typed
+				{uiText("Agent typed")}
 			</span>
 			<pre className="overflow-x-auto rounded-md border border-dashed border-border-strong bg-background px-2.5 py-1.5 font-mono text-[10.5px] leading-relaxed text-accent">
 				{shown}
 			</pre>
 			{truncated ? (
 				<p className="text-[10px] text-muted-foreground/70">
-					AO stopped recording keystrokes at its cap; more were sent.
+					{uiText("AO stopped recording keystrokes at its cap; more were sent.")}
 				</p>
 			) : null}
 		</div>
@@ -542,15 +507,18 @@ function CommandOutput({ activity }: { activity: ConversationActivity }) {
 			</pre>
 			{detail?.outputTruncated ? (
 				<p className="text-[10px] leading-relaxed text-warning">
-					This command printed more than AO stores, so the output above stops early. Open a shell in
-					the worktree to see the rest.
+					{uiText(
+						"This command printed more than AO stores, so the output above stops early. Open a shell in the worktree to see the rest.",
+					)}
 				</p>
 			) : detail?.outputMayBePartial ? (
 				<p className="text-[10px] leading-relaxed text-muted-foreground/70">
-					{detail.outputSource === "stream"
-						? "Streamed live as the command runs. The provider drops the first chunk, so the beginning may be missing."
-						: "Rolled up by the provider after the command finished, and observed to drop the beginning."}{" "}
-					Open a shell in the worktree for the full run.
+					{uiText(
+						detail.outputSource === "stream"
+							? "Streamed live as the command runs. The provider drops the first chunk, so the beginning may be missing."
+							: "Rolled up by the provider after the command finished, and observed to drop the beginning.",
+					)}{" "}
+					{uiText("Open a shell in the worktree for the full run.")}
 				</p>
 			) : null}
 		</>
@@ -579,19 +547,28 @@ function commandOutputText(raw: unknown): string {
  * scans: what happened, then what it happened to. A command becomes its binary
  * plus its arguments; anything without a natural split keeps its whole label.
  */
-function splitSummary(activity: ConversationActivity): { label: string; path?: string } {
+function splitSummary(activity: ConversationActivity): {
+	label: string;
+	path?: string;
+} {
 	if (activity.activityKind === "command") {
 		const rawCommand = activity.detail?.command ?? activity.summary;
 		const category = commandCategory(rawCommand);
 		if (category === "read" || category === "search") {
 			const count = exploredFileCount(rawCommand);
-			return { label: count ? `Explored ${count} ${count === 1 ? "file" : "files"}` : "Explored files" };
+			return {
+				label: count
+					? `${uiText("Explored")} ${count} ${uiText(count === 1 ? "file" : "files")}`
+					: uiText("Explored files"),
+			};
 		}
-		return { label: category === "vcs" ? "Checked repository" : "Ran command" };
+		return {
+			label: uiText(category === "vcs" ? "Checked repository" : "Ran command"),
+		};
 	}
 	const files = fileChangeFiles(activity);
 	if (activity.activityKind === "file_change" && files.length === 1) {
-		return { label: "Edited", path: shortenPaths(files[0]!.path) };
+		return { label: uiText("Edited"), path: shortenPaths(files[0]!.path) };
 	}
 	return { label: activity.summary };
 }
@@ -613,7 +590,7 @@ function ActivityState({
 	if (status === "running") {
 		return (
 			<Loader2
-				aria-label="running"
+				aria-label={uiText("running")}
 				className="size-3 shrink-0 animate-spin self-center text-muted-foreground/60"
 			/>
 		);
@@ -623,24 +600,19 @@ function ActivityState({
 		const deletions = files.reduce((sum, file) => sum + file.deletions, 0);
 		return (
 			<span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70">
-				<span className="text-success">+{additions}</span>{" "}
-				<span className="text-destructive">&minus;{deletions}</span>
+				<span className="text-success">+{additions}</span> <span className="text-destructive">&minus;{deletions}</span>
 			</span>
 		);
 	}
 	if (status === "failed") {
 		return (
 			<span className="shrink-0 font-mono text-[10px] tabular-nums text-destructive">
-				{detail?.exitCode !== undefined ? `exit ${detail.exitCode}` : "failed"}
+				{detail?.exitCode !== undefined ? `${uiText("exit")} ${detail.exitCode}` : uiText("failed")}
 			</span>
 		);
 	}
 	if (status === "cancelled") {
-		return (
-			<span className="shrink-0 font-mono text-[10px] text-muted-foreground/70">
-				stopped
-			</span>
-		);
+		return <span className="shrink-0 font-mono text-[10px] text-muted-foreground/70">{uiText("stopped")}</span>;
 	}
 	// Everything else settled fine, which is the boring majority. A chevron on
 	// hover is the whole affordance; a duration or timestamp on every row builds a
@@ -688,9 +660,9 @@ function FileChangeRow({ file }: { file: FileChangeFile }) {
 	const line = (
 		<>
 			<span
-				aria-label={status.label}
+				aria-label={uiText(status.label)}
 				className={cn("w-3 shrink-0 text-center font-mono text-[10px] font-semibold", status.tone)}
-				title={status.label}
+				title={uiText(status.label)}
 			>
 				{status.mark}
 			</span>
@@ -705,12 +677,8 @@ function FileChangeRow({ file }: { file: FileChangeFile }) {
 				) : null}
 				{shortenPaths(file.path)}
 			</span>
-			<span className="shrink-0 font-mono text-[10px] tabular-nums text-success">
-				+{file.additions}
-			</span>
-			<span className="shrink-0 font-mono text-[10px] tabular-nums text-destructive">
-				&minus;{file.deletions}
-			</span>
+			<span className="shrink-0 font-mono text-[10px] tabular-nums text-success">+{file.additions}</span>
+			<span className="shrink-0 font-mono text-[10px] tabular-nums text-destructive">&minus;{file.deletions}</span>
 		</>
 	);
 
@@ -731,10 +699,7 @@ function FileChangeRow({ file }: { file: FileChangeFile }) {
 				{line}
 				<ChevronRight
 					aria-hidden="true"
-					className={cn(
-						"size-3 shrink-0 text-muted-foreground/50 transition-transform",
-						open && "rotate-90",
-					)}
+					className={cn("size-3 shrink-0 text-muted-foreground/50 transition-transform", open && "rotate-90")}
 				/>
 			</button>
 			{open ? <Patch patch={file.patch!} truncated={file.patchTruncated} /> : null}
@@ -765,8 +730,9 @@ function Patch({ patch, truncated }: { patch: string; truncated?: boolean }) {
 			</pre>
 			{truncated ? (
 				<p className="border-t border-border px-2.5 py-1.5 text-[10px] leading-relaxed text-warning">
-					This patch is longer than AO stores, so it stops early. The whole change is in the
-					worktree and in the turn&rsquo;s diff.
+					{uiText(
+						"This patch is longer than AO stores, so it stops early. The whole change is in the worktree and in the turn’s diff.",
+					)}
 				</p>
 			) : null}
 		</div>
@@ -802,19 +768,16 @@ function ReasoningBlock({ activity }: { activity: ConversationActivity }) {
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
 					<span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
-						{streaming ? "Thinking" : "Thought"}
+						{uiText(streaming ? "Thinking" : "Thought")}
 					</span>
 					{streaming ? (
-						<Loader2
-							aria-label="still thinking"
-							className="size-3 animate-spin text-muted-foreground/50"
-						/>
+						<Loader2 aria-label={uiText("still thinking")} className="size-3 animate-spin text-muted-foreground/50" />
 					) : null}
 				</div>
 				<ChatMarkdown text={text} streaming={streaming} muted />
 				{activity.detail?.textTruncated ? (
 					<p className="mt-1 text-[10px] text-muted-foreground/70">
-						This summary is longer than AO stores, so it stops early.
+						{uiText("This summary is longer than AO stores, so it stops early.")}
 					</p>
 				) : null}
 			</div>
@@ -842,10 +805,7 @@ function McpToolRow({ activity }: { activity: ConversationActivity }) {
 	const server = detail?.server ?? detail?.namespace;
 	const failed = activity.status === "failed" || detail?.success === false || Boolean(detail?.error);
 	const hasBody = Boolean(
-		detail?.arguments !== undefined ||
-			detail?.result !== undefined ||
-			detail?.error ||
-			detail?.progress,
+		detail?.arguments !== undefined || detail?.result !== undefined || detail?.error || detail?.progress,
 	);
 
 	return (
@@ -863,10 +823,7 @@ function McpToolRow({ activity }: { activity: ConversationActivity }) {
 			>
 				<Plug
 					aria-hidden="true"
-					className={cn(
-						"w-[15px] shrink-0 text-center",
-						failed ? "text-destructive" : "text-accent-dim",
-					)}
+					className={cn("w-[15px] shrink-0 text-center", failed ? "text-destructive" : "text-accent-dim")}
 					size={13}
 				/>
 				{/* The server is named first and in its own colour: which server answered is
@@ -879,26 +836,18 @@ function McpToolRow({ activity }: { activity: ConversationActivity }) {
 						</span>
 					</span>
 				) : null}
-				<strong
-					className={cn(
-						"shrink-0 text-[10.5px] font-medium",
-						failed ? "text-destructive" : "text-foreground",
-					)}
-				>
+				<strong className={cn("shrink-0 text-[10.5px] font-medium", failed ? "text-destructive" : "text-foreground")}>
 					{tool}
 				</strong>
 				<span className="min-w-0 flex-1 truncate text-[10.5px] text-muted-foreground/70">
-					{detail?.progress ? lastLine(detail.progress) : "MCP tool"}
+					{detail?.progress ? lastLine(detail.progress) : uiText("MCP tool")}
 				</span>
 				{activity.status === "running" ? (
-					<Loader2
-						aria-label="running"
-						className="size-3 shrink-0 animate-spin text-muted-foreground/60"
-					/>
+					<Loader2 aria-label={uiText("running")} className="size-3 shrink-0 animate-spin text-muted-foreground/60" />
 				) : failed ? (
-					<span className="shrink-0 text-[10px] text-destructive">failed</span>
+					<span className="shrink-0 text-[10px] text-destructive">{uiText("failed")}</span>
 				) : activity.status === "cancelled" ? (
-					<span className="shrink-0 text-[10px] text-muted-foreground/70">stopped</span>
+					<span className="shrink-0 text-[10px] text-muted-foreground/70">{uiText("stopped")}</span>
 				) : hasBody ? (
 					<ChevronRight
 						aria-hidden="true"
@@ -918,15 +867,13 @@ function McpToolRow({ activity }: { activity: ConversationActivity }) {
 						</p>
 					) : null}
 					{detail?.arguments !== undefined ? (
-						<JsonPayload label="Arguments" value={detail.arguments} />
+						<JsonPayload label={uiText("Arguments")} value={detail.arguments} />
 					) : null}
-					{detail?.result !== undefined ? (
-						<JsonPayload label="Result" value={detail.result} />
-					) : null}
+					{detail?.result !== undefined ? <JsonPayload label={uiText("Result")} value={detail.result} /> : null}
 					{detail?.progress ? (
 						<div className="flex flex-col gap-1">
 							<span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
-								Progress
+								{uiText("Progress")}
 							</span>
 							<pre className="max-h-40 overflow-auto rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-[10.5px] leading-relaxed text-muted-foreground">
 								{detail.progress}
@@ -952,9 +899,7 @@ function JsonPayload({ label, value }: { label: string; value: unknown }) {
 
 	return (
 		<div className="flex flex-col gap-1">
-			<span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
-				{label}
-			</span>
+			<span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">{label}</span>
 			{capped ? (
 				<p className="rounded-md border border-border bg-background px-2.5 py-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
 					{capped}
@@ -973,10 +918,14 @@ function JsonPayload({ label, value }: { label: string; value: unknown }) {
 /** The daemon's stand-in for a payload past its cap, or nothing. */
 function truncationNote(value: unknown): string | undefined {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
-	const record = value as { truncated?: unknown; bytes?: unknown; note?: unknown };
+	const record = value as {
+		truncated?: unknown;
+		bytes?: unknown;
+		note?: unknown;
+	};
 	if (record.truncated !== true) return undefined;
 	const bytes = typeof record.bytes === "number" ? ` (${formatBytes(record.bytes)})` : "";
-	return `This payload${bytes} was larger than AO stores, so it was not kept.`;
+	return `${uiText("This payload")}${bytes}${uiText(" was larger than AO stores, so it was not kept.")}`;
 }
 
 function formatBytes(bytes: number): string {
@@ -1026,9 +975,7 @@ function AutoReviewRow({ activity }: { activity: ConversationActivity }) {
 	const denied = (detail?.status ?? "").toLowerCase().includes("den");
 	const Icon = denied ? ShieldX : ShieldCheck;
 	const paths = reviewedPaths(activity);
-	const hasBody = Boolean(
-		detail?.rationale || detail?.command || detail?.cwd || detail?.host || paths.length,
-	);
+	const hasBody = Boolean(detail?.rationale || detail?.command || detail?.cwd || detail?.host || paths.length);
 
 	return (
 		<div className="group/activity border-t border-border first:border-t-0">
@@ -1045,14 +992,11 @@ function AutoReviewRow({ activity }: { activity: ConversationActivity }) {
 			>
 				<Icon
 					aria-hidden="true"
-					className={cn(
-						"w-[15px] shrink-0 text-center",
-						denied ? "text-destructive" : "text-muted-foreground/70",
-					)}
+					className={cn("w-[15px] shrink-0 text-center", denied ? "text-destructive" : "text-muted-foreground/70")}
 					size={13}
 				/>
 				<strong className="shrink-0 font-medium text-foreground">
-					{denied ? "Auto-declined" : "Auto-approved"}
+					{uiText(denied ? "Auto-declined" : "Auto-approved")}
 				</strong>
 				<span
 					className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-muted-foreground"
@@ -1066,7 +1010,7 @@ function AutoReviewRow({ activity }: { activity: ConversationActivity }) {
 							"shrink-0 text-[10px] uppercase tracking-[0.06em]",
 							RISK_TONE[detail.riskLevel.toLowerCase()] ?? "text-muted-foreground",
 						)}
-						title={`Risk assessed as ${detail.riskLevel}`}
+						title={`${uiText("Risk assessed as")} ${detail.riskLevel}`}
 					>
 						{detail.riskLevel}
 					</span>
@@ -1087,9 +1031,11 @@ function AutoReviewRow({ activity }: { activity: ConversationActivity }) {
 					{/* Said in full rather than implied by the label: "auto-approved" alone
 					    leaves it ambiguous whether the user set something up that did this. */}
 					<p className="text-[11px] leading-relaxed text-muted-foreground">
-						{denied
-							? "The agent asked to do this and the provider declined on your behalf. You were not asked."
-							: "The agent asked to do this and the provider allowed it on your behalf. You were not asked."}
+						{uiText(
+							denied
+								? "The agent asked to do this and the provider declined on your behalf. You were not asked."
+								: "The agent asked to do this and the provider allowed it on your behalf. You were not asked.",
+						)}
 					</p>
 					{detail?.rationale ? (
 						<p className="rounded border border-border bg-background px-2.5 py-1.5 text-[11px] leading-relaxed text-foreground">
@@ -1099,27 +1045,25 @@ function AutoReviewRow({ activity }: { activity: ConversationActivity }) {
 					<dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 font-mono text-[10.5px] leading-relaxed">
 						{detail?.command ? (
 							<>
-								<dt className="text-muted-foreground/70">command</dt>
+								<dt className="text-muted-foreground/70">{uiText("command")}</dt>
 								<dd className="min-w-0 break-all text-foreground">{detail.command}</dd>
 							</>
 						) : null}
 						{detail?.cwd ? (
 							<>
-								<dt className="text-muted-foreground/70">cwd</dt>
-								<dd className="min-w-0 break-all text-muted-foreground">
-									{shortenPaths(detail.cwd)}
-								</dd>
+								<dt className="text-muted-foreground/70">{uiText("cwd")}</dt>
+								<dd className="min-w-0 break-all text-muted-foreground">{shortenPaths(detail.cwd)}</dd>
 							</>
 						) : null}
 						{detail?.host ? (
 							<>
-								<dt className="text-muted-foreground/70">host</dt>
+								<dt className="text-muted-foreground/70">{uiText("host")}</dt>
 								<dd className="min-w-0 break-all text-muted-foreground">{detail.host}</dd>
 							</>
 						) : null}
 						{paths.length ? (
 							<>
-								<dt className="text-muted-foreground/70">files</dt>
+								<dt className="text-muted-foreground/70">{uiText("files")}</dt>
 								<dd className="min-w-0 break-all text-muted-foreground">
 									{paths.map((path) => shortenPaths(path)).join(", ")}
 								</dd>
@@ -1127,7 +1071,7 @@ function AutoReviewRow({ activity }: { activity: ConversationActivity }) {
 						) : null}
 						{detail?.decisionSource ? (
 							<>
-								<dt className="text-muted-foreground/70">decided by</dt>
+								<dt className="text-muted-foreground/70">{uiText("decided by")}</dt>
 								<dd className="text-muted-foreground">
 									{/* A model making the call is a materially different thing to be
 									    told than a policy rule matching, so the provider's own word
@@ -1164,12 +1108,11 @@ function RerouteRow({ activity }: { activity: ConversationActivity }) {
 			<Shuffle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
 			<div className="flex min-w-0 flex-col gap-0.5">
 				<span className="text-[11px] text-foreground">
-					Answered by{" "}
-					<strong className="font-medium">{detail?.toModel ?? "another model"}</strong>
+					{uiText("Answered by")} <strong className="font-medium">{detail?.toModel ?? uiText("another model")}</strong>
 					{detail?.fromModel ? (
 						<>
 							{" "}
-							instead of <span className="text-muted-foreground">{detail.fromModel}</span>
+							{uiText("instead of")} <span className="text-muted-foreground">{detail.fromModel}</span>
 						</>
 					) : null}
 				</span>
@@ -1194,12 +1137,10 @@ function ReauthRow({ activity }: { activity: ConversationActivity }) {
 			<KeyRound aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-destructive" />
 			<div className="flex min-w-0 flex-col gap-0.5">
 				<strong className="text-[11px] font-medium text-destructive">
-					The provider asked you to sign in again
+					{uiText("The provider asked you to sign in again")}
 				</strong>
 				{activity.detail?.reason ? (
-					<span className="text-[10.5px] leading-snug text-muted-foreground">
-						{activity.detail.reason}
-					</span>
+					<span className="text-[10.5px] leading-snug text-muted-foreground">{activity.detail.reason}</span>
 				) : null}
 			</div>
 		</div>
@@ -1224,7 +1165,7 @@ export function SteerMessage({ activity }: { activity: ConversationActivity }) {
 			</div>
 			<span className="flex items-center gap-1 text-[11px] text-muted-foreground">
 				<CornerDownRight aria-hidden="true" className="size-3" />
-				Steered into the running turn
+				{uiText("Steered into the running turn")}
 			</span>
 		</div>
 	);
@@ -1268,24 +1209,22 @@ export function ApprovalCard({
 					className={cn("size-4 shrink-0", resolved ? "text-muted-foreground" : "text-warning")}
 				/>
 				<strong className="text-xs font-semibold text-foreground">
-					{resolved ? "Approval resolved" : "Approval required"}
+					{uiText(resolved ? "Approval resolved" : "Approval required")}
 				</strong>
 				<span className="ml-auto shrink-0 font-mono text-[11px] text-muted-foreground">
-					req {activity.requestId}
+					{uiText("req")} {activity.requestId}
 				</span>
 			</div>
 
 			<div className="flex flex-col gap-2.5 px-3.5 py-3">
-				{detail?.reason ? (
-					<p className="text-sm leading-relaxed text-muted-foreground">{detail.reason}</p>
-				) : null}
+				{detail?.reason ? <p className="text-sm leading-relaxed text-muted-foreground">{detail.reason}</p> : null}
 
 				<dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 rounded bg-background px-2.5 py-2 font-mono text-[11px] leading-relaxed">
-					<dt className="text-muted-foreground">command</dt>
+					<dt className="text-muted-foreground">{uiText("command")}</dt>
 					<dd className="min-w-0 break-all text-foreground">{detail?.command ?? activity.summary}</dd>
 					{detail?.cwd ? (
 						<>
-							<dt className="text-muted-foreground">cwd</dt>
+							<dt className="text-muted-foreground">{uiText("cwd")}</dt>
 							<dd className="min-w-0 break-all text-muted-foreground">{detail.cwd}</dd>
 						</>
 					) : null}
@@ -1293,7 +1232,7 @@ export function ApprovalCard({
 
 				{resolved ? (
 					<p className="text-[11px] text-muted-foreground">
-						Already answered. This card is kept for the record.
+						{uiText("Already answered. This card is kept for the record.")}
 					</p>
 				) : (
 					<div className="flex flex-wrap gap-2 pt-0.5">
@@ -1311,7 +1250,7 @@ export function ApprovalCard({
 						))}
 						{decisions.length === 0 ? (
 							<p className="text-[11px] text-warning">
-								The agent offered no decisions AO can present. Open diagnostics.
+								{uiText("The agent offered no decisions AO can present. Open diagnostics.")}
 							</p>
 						) : null}
 					</div>
@@ -1347,7 +1286,7 @@ export function CompactionMarker({ activity }: { activity: ConversationActivity 
 			<span aria-hidden="true" className="h-px flex-1 bg-border" />
 			<Archive aria-hidden="true" className="size-3 shrink-0 text-muted-foreground/70" />
 			<span className="shrink-0 text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
-				History compacted
+				{uiText("History compacted")}
 			</span>
 			{reclaimed ? (
 				<span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70">
@@ -1357,9 +1296,10 @@ export function CompactionMarker({ activity }: { activity: ConversationActivity 
 			{after && window ? (
 				<span
 					className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70"
-					title={`${after.toLocaleString()} of ${window.toLocaleString()} context tokens in use`}
+					title={`${after.toLocaleString()} ${uiText("of")} ${window.toLocaleString()} ${uiText("context tokens in use")}`}
 				>
-					{Math.round((after / window) * 100)}% full
+					{Math.round((after / window) * 100)}
+					{uiText("% full")}
 				</span>
 			) : null}
 			<span aria-hidden="true" className="h-px flex-1 bg-border" />
@@ -1408,11 +1348,11 @@ export function TurnChangedFiles({ diff, live }: { diff: TurnDiff; live?: boolea
 			>
 				<FileDiff aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
 				<strong className="shrink-0 text-xs font-semibold text-foreground">
-					{diff.files.length === 1 ? "1 file changed" : `${diff.files.length} files changed`}
+					{diff.files.length === 1 ? uiText("1 file changed") : `${diff.files.length} ${uiText("files changed")}`}
 				</strong>
 				{live ? (
 					<Loader2
-						aria-label="still changing"
+						aria-label={uiText("still changing")}
 						className="size-3 shrink-0 animate-spin text-muted-foreground/60"
 					/>
 				) : null}
@@ -1423,10 +1363,7 @@ export function TurnChangedFiles({ diff, live }: { diff: TurnDiff; live?: boolea
 				</span>
 				<ChevronRight
 					aria-hidden="true"
-					className={cn(
-						"size-3.5 shrink-0 text-muted-foreground/50 transition-transform",
-						open && "rotate-90",
-					)}
+					className={cn("size-3.5 shrink-0 text-muted-foreground/50 transition-transform", open && "rotate-90")}
 				/>
 			</button>
 
@@ -1440,9 +1377,9 @@ export function TurnChangedFiles({ diff, live }: { diff: TurnDiff; live?: boolea
 								className="flex items-center gap-2.5 px-3.5 py-1.5 text-[11px]"
 							>
 								<span
-									aria-label={status.label}
+									aria-label={uiText(status.label)}
 									className={cn("w-3 shrink-0 text-center font-mono font-semibold", status.tone)}
-									title={status.label}
+									title={uiText(status.label)}
 								>
 									{status.mark}
 								</span>
@@ -1451,9 +1388,7 @@ export function TurnChangedFiles({ diff, live }: { diff: TurnDiff; live?: boolea
 									    and lose the fact that something moved. */}
 									{file.oldPath ? (
 										<>
-											<span className="text-muted-foreground/60">
-												{shortenPaths(file.oldPath)}
-											</span>
+											<span className="text-muted-foreground/60">{shortenPaths(file.oldPath)}</span>
 											<span aria-hidden="true" className="px-1 text-muted-foreground/40">
 												&rarr;
 											</span>
@@ -1463,18 +1398,14 @@ export function TurnChangedFiles({ diff, live }: { diff: TurnDiff; live?: boolea
 										shortenPaths(file.path)
 									)}
 								</span>
-								<span className="shrink-0 font-mono tabular-nums text-success">
-									+{file.additions}
-								</span>
-								<span className="shrink-0 font-mono tabular-nums text-destructive">
-									&minus;{file.deletions}
-								</span>
+								<span className="shrink-0 font-mono tabular-nums text-success">+{file.additions}</span>
+								<span className="shrink-0 font-mono tabular-nums text-destructive">&minus;{file.deletions}</span>
 							</li>
 						);
 					})}
 					{diff.truncated ? (
 						<li className="px-3.5 py-2 text-[10px] leading-relaxed text-warning">
-							This turn changed more files than AO lists here. Use the Diff tab for the whole change.
+							{uiText("This turn changed more files than AO lists here. Use the Diff tab for the whole change.")}
 						</li>
 					) : null}
 				</ul>
@@ -1532,12 +1463,10 @@ export function TurnOutcome({
 					onClick={onRollback}
 					className="shrink-0 rounded px-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70 opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover/turn:opacity-100"
 				>
-					Roll back to here
+					{uiText("Roll back to here")}
 				</button>
 			) : null}
-			<span className={cn("shrink-0 text-[10px] uppercase tracking-[0.08em]", copy.tone)}>
-				{copy.label}
-			</span>
+			<span className={cn("shrink-0 text-[10px] uppercase tracking-[0.08em]", copy.tone)}>{uiText(copy.label)}</span>
 			{durationMs !== undefined && durationMs > 0 ? (
 				<span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70">
 					{formatDuration(durationMs)}

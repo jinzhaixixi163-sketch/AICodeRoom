@@ -34,6 +34,7 @@ import { applyDocumentTheme, applyDocumentThemeStyle } from "../lib/theme";
 import { aoBridge } from "../lib/bridge";
 import { handleModifierLinkClick } from "../lib/external-link-policy";
 import { cn } from "../lib/utils";
+import { uiText } from "../i18n/localized-ui";
 import {
 	isLinuxPlatform,
 	isMacPlatform,
@@ -61,7 +62,7 @@ export const Route = createFileRoute("/_shell")({
 });
 
 function errorMessage(error: unknown) {
-	return error instanceof Error ? error.message : "Could not load projects";
+	return uiText(error instanceof Error ? error.message : "Could not load projects");
 }
 
 type CreateProjectConfigInput = {
@@ -72,8 +73,12 @@ type CreateProjectConfigInput = {
 
 export function createProjectConfig(input: CreateProjectConfigInput): components["schemas"]["ProjectConfig"] {
 	return {
-		worker: { agent: input.workerAgent as components["schemas"]["RoleOverride"]["agent"] },
-		orchestrator: { agent: input.orchestratorAgent as components["schemas"]["RoleOverride"]["agent"] },
+		worker: {
+			agent: input.workerAgent as components["schemas"]["RoleOverride"]["agent"],
+		},
+		orchestrator: {
+			agent: input.orchestratorAgent as components["schemas"]["RoleOverride"]["agent"],
+		},
 		...(input.trackerIntake ? { trackerIntake: input.trackerIntake } : {}),
 	};
 }
@@ -140,7 +145,10 @@ function ShellLayout() {
 	const [isKeyboardShortcutsSettingsOpen, setIsKeyboardShortcutsSettingsOpen] = useState(false);
 	const [isSidebarPeekOpen, setIsSidebarPeekOpen] = useState(false);
 	const sidebarPeekCloseTimerRef = useRef<number | undefined>(undefined);
-	const routeParams = useParams({ strict: false }) as { projectId?: string; sessionId?: string };
+	const routeParams = useParams({ strict: false }) as {
+		projectId?: string;
+		sessionId?: string;
+	};
 	useEffect(() => {
 		document.addEventListener("click", handleModifierLinkClick);
 		return () => document.removeEventListener("click", handleModifierLinkClick);
@@ -244,7 +252,7 @@ function ShellLayout() {
 			void captureRendererEvent("ao.renderer.project_add_requested");
 			const status = await refreshDaemonStatus();
 			if (status.state !== "ready" || !status.port) {
-				throw new Error(status.message || "AO daemon is not ready.");
+				throw new Error(uiText(status.message || "AO daemon is not ready."));
 			}
 			const { data, error } = await apiClient.POST("/api/v1/projects", {
 				body: {
@@ -254,7 +262,9 @@ function ShellLayout() {
 				},
 			});
 			if (error) {
-				const failure = new Error(apiErrorMessage(error)) as Error & { code?: string };
+				const failure = new Error(apiErrorMessage(error)) as Error & {
+					code?: string;
+				};
 				failure.code = apiErrorCode(error);
 				void captureRendererException(failure, {
 					source: "project-add",
@@ -263,7 +273,7 @@ function ShellLayout() {
 				});
 				throw failure;
 			}
-			if (!data?.project) throw new Error("Project creation returned no project");
+			if (!data?.project) throw new Error(uiText("Project creation returned no project"));
 
 			const workspace: WorkspaceSummary = {
 				id: data.project.id,
@@ -279,7 +289,9 @@ function ShellLayout() {
 				clientProjectId: workspace.id,
 				name: workspace.name,
 			});
-			void captureRendererEvent("ao.renderer.project_add_succeeded", { project_id: workspace.id });
+			void captureRendererEvent("ao.renderer.project_add_succeeded", {
+				project_id: workspace.id,
+			});
 			updateWorkspaces((current) => [workspace, ...current.filter((item) => item.id !== workspace.id)]);
 			setOrchestratorStartupError(workspace.id, null);
 			try {
@@ -319,9 +331,12 @@ function ShellLayout() {
 					project_id: workspace.id,
 					source: "project_add",
 				});
-				void navigate({ to: "/projects/$projectId", params: { projectId: workspace.id } });
-				const message = spawnError instanceof Error ? spawnError.message : "Could not start orchestrator";
-				const startupMessage = `Project added, but orchestrator did not start: ${message}`;
+				void navigate({
+					to: "/projects/$projectId",
+					params: { projectId: workspace.id },
+				});
+				const message = uiText(spawnError instanceof Error ? spawnError.message : "Could not start orchestrator");
+				const startupMessage = `${uiText("Project added, but orchestrator did not start:")} ${message}`;
 				setOrchestratorStartupError(workspace.id, startupMessage);
 			}
 		},
@@ -333,7 +348,9 @@ function ShellLayout() {
 			body: { path },
 		});
 		if (error) {
-			const failure = new Error(apiErrorMessage(error)) as Error & { code?: string };
+			const failure = new Error(apiErrorMessage(error)) as Error & {
+				code?: string;
+			};
 			failure.code = apiErrorCode(error);
 			throw failure;
 		}
@@ -351,7 +368,9 @@ function ShellLayout() {
 				params: { path: { id: projectId } },
 			});
 			if (error) {
-				const failure = new Error(apiErrorMessage(error)) as Error & { code?: string };
+				const failure = new Error(apiErrorMessage(error)) as Error & {
+					code?: string;
+				};
 				failure.code = apiErrorCode(error);
 				void captureRendererException(failure, {
 					source: "project-remove",
@@ -361,7 +380,9 @@ function ShellLayout() {
 				});
 				throw failure;
 			}
-			void captureRendererEvent("ao.renderer.project_removed", { project_id: projectId });
+			void captureRendererEvent("ao.renderer.project_removed", {
+				project_id: projectId,
+			});
 			updateWorkspaces((current) => current.filter((item) => item.id !== projectId));
 		},
 		[updateWorkspaces],
@@ -413,8 +434,7 @@ function ShellLayout() {
 			};
 		}
 
-		workspaceStartupBaselineRef.current =
-			queryClient.getQueryState(workspaceQueryKey)?.dataUpdatedAt ?? 0;
+		workspaceStartupBaselineRef.current = queryClient.getQueryState(workspaceQueryKey)?.dataUpdatedAt ?? 0;
 		setWorkspaceStartupState("loading");
 		void queryClient
 			.fetchQuery({ ...workspaceQueryOptions, staleTime: 0 })
@@ -445,12 +465,7 @@ function ShellLayout() {
 			return;
 		}
 		setWorkspaceStartupState("ready");
-	}, [
-		daemonStatus.state,
-		workspaceQuery.dataUpdatedAt,
-		workspaceQuery.isSuccess,
-		workspaceStartupState,
-	]);
+	}, [daemonStatus.state, workspaceQuery.dataUpdatedAt, workspaceQuery.isSuccess, workspaceStartupState]);
 
 	// Keep Electron's nativeTheme in step with the shell so the embedded preview
 	// WebContentsView (which follows prefers-color-scheme) flips at the same time.
@@ -477,9 +492,7 @@ function ShellLayout() {
 			// TitlebarNav / WindowTitlebar sit above the peek in z-order; keep the
 			// preview open while the pointer is on those controls so hover→click
 			// to pin still works.
-			const isInTitlebarChrome = Boolean(
-				target?.closest("[data-slot='titlebar-nav'], .window-titlebar"),
-			);
+			const isInTitlebarChrome = Boolean(target?.closest("[data-slot='titlebar-nav'], .window-titlebar"));
 			const sidebar = document.querySelector<HTMLElement>('[data-slot="sidebar-container"]');
 			const bounds = sidebar?.getBoundingClientRect();
 			const isInSidebar = Boolean(
@@ -507,7 +520,10 @@ function ShellLayout() {
 
 		agentCatalogPortRef.current = daemonStatus.port;
 		void queryClient.invalidateQueries({ queryKey: agentsQueryKey });
-		void queryClient.fetchQuery({ ...agentsQueryOptions, queryFn: refreshAgents });
+		void queryClient.fetchQuery({
+			...agentsQueryOptions,
+			queryFn: refreshAgents,
+		});
 	}, [daemonStatus.port, daemonStatus.state, queryClient]);
 
 	// Follow OS appearance while the user keeps Theme on System — updates
@@ -532,7 +548,10 @@ function ShellLayout() {
 				const workspace = workspaces[Number(event.key) - 1];
 				if (workspace) {
 					event.preventDefault();
-					void navigate({ to: "/projects/$projectId", params: { projectId: workspace.id } });
+					void navigate({
+						to: "/projects/$projectId",
+						params: { projectId: workspace.id },
+					});
 				}
 			}
 		};
@@ -596,10 +615,7 @@ function ShellLayout() {
 		setActiveShellTerminal,
 	]);
 
-	useEffect(
-		() => aoBridge.app.onOpenSettingsShortcut(() => useUiStore.getState().openGlobalSettings()),
-		[],
-	);
+	useEffect(() => aoBridge.app.onOpenSettingsShortcut(() => useUiStore.getState().openGlobalSettings()), []);
 
 	useEffect(() => {
 		const disposePrevious = aoBridge.app.onPreviousSessionShortcut(() => navigateSession(-1));
@@ -624,7 +640,14 @@ function ShellLayout() {
 	);
 
 	return (
-		<ShellProvider value={{ daemonStatus, workspaceStartupState, createProject, initializeProjectRepository }}>
+		<ShellProvider
+			value={{
+				daemonStatus,
+				workspaceStartupState,
+				createProject,
+				initializeProjectRepository,
+			}}
+		>
 			<SessionTopbarProvider>
 				<NotificationRuntime />
 				<TrayRuntime />
@@ -642,128 +665,126 @@ function ShellLayout() {
 					open={isKeyboardShortcutsSettingsOpen}
 					onOpenChange={setIsKeyboardShortcutsSettingsOpen}
 				/>
-				<TerminalCacheProvider
-					daemonReady={daemonStatus.state === "ready"}
-					theme={resolvedTheme}
-				>
-
-			{/* Shell chrome: Win/Linux hang the sidebar under a topbar. macOS uses a
+				<TerminalCacheProvider daemonReady={daemonStatus.state === "ready"} theme={resolvedTheme}>
+					{/* Shell chrome: Win/Linux hang the sidebar under a topbar. macOS uses a
           titlebar strip above the off-canvas sidebar. Session and board actions
           render inside the center panel when the shell topbar is hidden. */}
-			<div
-				className={cn(
-					"flex h-screen min-h-0 flex-col bg-sidebar text-foreground",
-					isWindows && "platform-windows",
-					isLinux && "platform-linux",
-					isFullScreen && "native-fullscreen",
-				)}
-			>
-				{/* Windows-only custom title bar (sidebar toggle + File/Edit/View/…
+					<div
+						className={cn(
+							"flex h-screen min-h-0 flex-col bg-sidebar text-foreground",
+							isWindows && "platform-windows",
+							isLinux && "platform-linux",
+							isFullScreen && "native-fullscreen",
+						)}
+					>
+						{/* Windows-only custom title bar (sidebar toggle + File/Edit/View/…
             menu); paints the chrome the frameless window drops. Renders null on
             macOS/Linux. */}
-				<WindowTitlebar onSidebarPreviewEnter={previewSidebar} />
-				{/* App routes render their topbar inside the framed panel, matching the board chrome across platforms while leaving OS titlebars native. */}
-				{!framedAppTopbar && !hideShellTopbar && !routeParams.sessionId ? <ShellTopbar /> : null}
-				{/* Controlled by the ui-store so TitlebarNav / Topbar toggles (which
+						<WindowTitlebar onSidebarPreviewEnter={previewSidebar} />
+						{/* App routes render their topbar inside the framed panel, matching the board chrome across platforms while leaving OS titlebars native. */}
+						{!framedAppTopbar && !hideShellTopbar && !routeParams.sessionId ? <ShellTopbar /> : null}
+						{/* Controlled by the ui-store so TitlebarNav / Topbar toggles (which
             call the store directly) stay in sync. --sidebar-width chains to
             the drag-resizable --ao-sidebar-w set on :root by useResizable. */}
-				<SidebarProvider
-					className="min-h-0 flex-1 flex-col overflow-x-hidden"
-					keyboardShortcut={false}
-					onOpenChange={(open) => {
-						cancelSidebarPeekClose();
-						setIsSidebarPeekOpen(false);
-						if (open !== isSidebarOpen) toggleSidebar();
-					}}
-					open={!isStartupLoading && (isSidebarOpen || isSidebarPeekOpen)}
-					style={
-						{
-							"--sidebar-width": "var(--ao-sidebar-w, var(--size-sidebar-default))",
-							"--sidebar-width-icon": "var(--size-sidebar-icon)",
-						} as CSSProperties
-					}
-				>
-				<div className="flex min-h-0 w-full flex-1 overflow-x-hidden" data-testid="shell-content-row">
-				{/* macOS + Linux reserve a titlebar band for the fixed TitlebarNav
+						<SidebarProvider
+							className="min-h-0 flex-1 flex-col overflow-x-hidden"
+							keyboardShortcut={false}
+							onOpenChange={(open) => {
+								cancelSidebarPeekClose();
+								setIsSidebarPeekOpen(false);
+								if (open !== isSidebarOpen) toggleSidebar();
+							}}
+							open={!isStartupLoading && (isSidebarOpen || isSidebarPeekOpen)}
+							style={
+								{
+									"--sidebar-width": "var(--ao-sidebar-w, var(--size-sidebar-default))",
+									"--sidebar-width-icon": "var(--size-sidebar-icon)",
+								} as CSSProperties
+							}
+						>
+							<div className="flex min-h-0 w-full flex-1 overflow-x-hidden" data-testid="shell-content-row">
+								{/* macOS + Linux reserve a titlebar band for the fixed TitlebarNav
               cluster above a full-height sidebar; Windows hangs the sidebar
               below its custom titlebar. */}
-				<Sidebar
-					hideEdgeBorder={isWelcomeBoard}
-					isOverlay={isSidebarPeekOpen && !isSidebarOpen}
-					onPreviewLeave={scheduleSidebarPeekClose}
-					underTopbar={isMac || isWindows || isLinux}
-					topbarOffset={isWindows ? "titlebar" : hideShellTopbar ? "trafficLights" : "toolbar"}
-						onCreateProject={createProject}
-						onInitializeProject={initializeProjectRepository}
-						onRemoveProject={removeProject}
-						workspaceError={workspaceQuery.isError ? errorMessage(workspaceQuery.error) : undefined}
-						workspaces={workspaces}
-					/>
-					<main className={cn("flex min-w-0 flex-1 flex-col overflow-x-hidden", !isSidebarOpen && "sidebar-hidden")}>
-						<div className="min-h-0 flex-1 overflow-x-hidden">
-							{/* Board/session routes render inside the same inset box the welcome board and settings paint for themselves, so every screen sits within the app's outer boundary. */}
-							{hideShellTopbar ? (
-								selfFramedCenterPanel ? (
-									<Outlet />
-								) : (
-							// Platform hides shell topbar: full-height panel; session mounts actions in-panel.
-							<CenterPanelShell className={routeParams.sessionId ? "center-panel-shell--session" : undefined}>
-								{routeParams.sessionId ? (
-									<SessionTopbarHost
-										className="relative z-chrome flex h-inspector-tabs w-full shrink-0 overflow-hidden"
-										data-testid="session-topbar-host"
-									/>
-								) : null}
-								<div className="flex min-h-0 flex-1 flex-col">
-									<Outlet />
-								</div>
-							</CenterPanelShell>
-						)
-					) : framedAppTopbar ? (
-						<CenterPanelShell className={routeParams.sessionId ? "center-panel-shell--session" : undefined}>
-							{routeParams.sessionId ? (
-								<SessionTopbarHost
-									className="relative z-chrome flex h-inspector-tabs w-full shrink-0 overflow-hidden"
-									data-testid="session-topbar-host"
+								<Sidebar
+									hideEdgeBorder={isWelcomeBoard}
+									isOverlay={isSidebarPeekOpen && !isSidebarOpen}
+									onPreviewLeave={scheduleSidebarPeekClose}
+									underTopbar={isMac || isWindows || isLinux}
+									topbarOffset={isWindows ? "titlebar" : hideShellTopbar ? "trafficLights" : "toolbar"}
+									onCreateProject={createProject}
+									onInitializeProject={initializeProjectRepository}
+									onRemoveProject={removeProject}
+									workspaceError={workspaceQuery.isError ? errorMessage(workspaceQuery.error) : undefined}
+									workspaces={workspaces}
 								/>
-							) : (
-								<ShellTopbar />
-							)}
-							<div className="flex min-h-0 flex-1 flex-col">
-								<Outlet />
+								<main
+									className={cn("flex min-w-0 flex-1 flex-col overflow-x-hidden", !isSidebarOpen && "sidebar-hidden")}
+								>
+									<div className="min-h-0 flex-1 overflow-x-hidden">
+										{/* Board/session routes render inside the same inset box the welcome board and settings paint for themselves, so every screen sits within the app's outer boundary. */}
+										{hideShellTopbar ? (
+											selfFramedCenterPanel ? (
+												<Outlet />
+											) : (
+												// Platform hides shell topbar: full-height panel; session mounts actions in-panel.
+												<CenterPanelShell className={routeParams.sessionId ? "center-panel-shell--session" : undefined}>
+													{routeParams.sessionId ? (
+														<SessionTopbarHost
+															className="relative z-chrome flex h-inspector-tabs w-full shrink-0 overflow-hidden"
+															data-testid="session-topbar-host"
+														/>
+													) : null}
+													<div className="flex min-h-0 flex-1 flex-col">
+														<Outlet />
+													</div>
+												</CenterPanelShell>
+											)
+										) : framedAppTopbar ? (
+											<CenterPanelShell className={routeParams.sessionId ? "center-panel-shell--session" : undefined}>
+												{routeParams.sessionId ? (
+													<SessionTopbarHost
+														className="relative z-chrome flex h-inspector-tabs w-full shrink-0 overflow-hidden"
+														data-testid="session-topbar-host"
+													/>
+												) : (
+													<ShellTopbar />
+												)}
+												<div className="flex min-h-0 flex-1 flex-col">
+													<Outlet />
+												</div>
+											</CenterPanelShell>
+										) : (
+											<CenterPanelShell className={routeParams.sessionId ? "center-panel-shell--session" : undefined}>
+												{routeParams.sessionId ? (
+													<SessionTopbarHost
+														className="relative z-chrome flex h-inspector-tabs w-full shrink-0 overflow-hidden"
+														data-testid="session-topbar-host"
+													/>
+												) : null}
+												<div className="flex min-h-0 flex-1 flex-col">
+													<Outlet />
+												</div>
+											</CenterPanelShell>
+										)}
+									</div>
+								</main>
 							</div>
-						</CenterPanelShell>
-					) : (
-						<CenterPanelShell className={routeParams.sessionId ? "center-panel-shell--session" : undefined}>
-							{routeParams.sessionId ? (
-								<SessionTopbarHost
-									className="relative z-chrome flex h-inspector-tabs w-full shrink-0 overflow-hidden"
-									data-testid="session-topbar-host"
-								/>
-							) : null}
-							<div className="flex min-h-0 flex-1 flex-col">
-								<Outlet />
-							</div>
-						</CenterPanelShell>
-					)}
-						</div>
-					</main>
-					</div>
-					<DaemonFailureBanner status={daemonStatus} />
-					{/* When ShellTopbar is hidden, keep a macOS window-drag strip over
+							<DaemonFailureBanner status={daemonStatus} />
+							{/* When ShellTopbar is hidden, keep a macOS window-drag strip over
               the traffic-light band only. The fixed TitlebarNav renders after
               this strip so its no-drag buttons remain clickable. */}
-					{hideShellTopbar && isMac ? (
-						<div
-							aria-hidden="true"
-							className={cn(
-								"fixed top-0 left-0 z-chrome w-(--ao-sidebar-w,var(--size-sidebar-default)) transition-[height] duration-200 ease-out motion-reduce:transition-none",
-								isFullScreen ? "pointer-events-none h-0" : "h-traffic-light-clearance",
-							)}
-							style={trafficLightDragActive ? ({ WebkitAppRegion: "drag" } as CSSProperties) : undefined}
-						/>
-					) : null}
-					{/* Fixed macOS titlebar cluster beside the traffic lights — rendered
+							{hideShellTopbar && isMac ? (
+								<div
+									aria-hidden="true"
+									className={cn(
+										"fixed top-0 left-0 z-chrome w-(--ao-sidebar-w,var(--size-sidebar-default)) transition-[height] duration-200 ease-out motion-reduce:transition-none",
+										isFullScreen ? "pointer-events-none h-0" : "h-traffic-light-clearance",
+									)}
+									style={trafficLightDragActive ? ({ WebkitAppRegion: "drag" } as CSSProperties) : undefined}
+								/>
+							) : null}
+							{/* Fixed macOS titlebar cluster beside the traffic lights — rendered
               once here so the toggle/history buttons never move when the
               sidebar collapses or expands. History arrows stay visible but
               locked on the empty start page. MUST come after the drag strip
@@ -773,25 +794,26 @@ function ShellLayout() {
               survive if they're processed after the drag strips they overlap.
               Rendered first, real clicks get swallowed by window-drag even
               though DOM hit-testing looks correct. */}
-					<TitlebarNav
-						hasSessionTopbar={Boolean(routeParams.sessionId)}
-						historyLocked={isWelcomeBoard}
-						isFullScreen={isFullScreen}
-						onSidebarPreviewEnter={previewSidebar}
-					/>
-				</SidebarProvider>
-				<OrchestratorReplacementDialog
-					error={replacementErrorProjectId ? orchestratorReplacementErrors[replacementErrorProjectId] : undefined}
-					onOpenChange={(open) => {
-						if (!open && replacementErrorProjectId) setOrchestratorReplacementError(replacementErrorProjectId, null);
-					}}
-					onRetry={(projectId) => void restartOrchestrator(projectId)}
-					onRetryAsTui={(projectId) => void restartOrchestrator(projectId, "tui")}
-					projectId={replacementErrorProjectId}
-					workspaces={workspaces}
-				/>
-					<CommandPalette />
-				</div>
+							<TitlebarNav
+								hasSessionTopbar={Boolean(routeParams.sessionId)}
+								historyLocked={isWelcomeBoard}
+								isFullScreen={isFullScreen}
+								onSidebarPreviewEnter={previewSidebar}
+							/>
+						</SidebarProvider>
+						<OrchestratorReplacementDialog
+							error={replacementErrorProjectId ? orchestratorReplacementErrors[replacementErrorProjectId] : undefined}
+							onOpenChange={(open) => {
+								if (!open && replacementErrorProjectId)
+									setOrchestratorReplacementError(replacementErrorProjectId, null);
+							}}
+							onRetry={(projectId) => void restartOrchestrator(projectId)}
+							onRetryAsTui={(projectId) => void restartOrchestrator(projectId, "tui")}
+							projectId={replacementErrorProjectId}
+							workspaces={workspaces}
+						/>
+						<CommandPalette />
+					</div>
 				</TerminalCacheProvider>
 			</SessionTopbarProvider>
 		</ShellProvider>

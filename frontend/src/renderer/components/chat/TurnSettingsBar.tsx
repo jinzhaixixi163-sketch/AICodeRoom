@@ -12,10 +12,7 @@
  */
 
 import { Fragment } from "react";
-import {
-	ChevronUp,
-	Shuffle,
-} from "lucide-react";
+import { ChevronUp, Shuffle } from "lucide-react";
 import { Button } from "../ui/button";
 import {
 	DropdownMenu,
@@ -33,24 +30,32 @@ import type {
 	ModelReroute,
 	TurnSettings,
 } from "../../types/conversation";
+import { uiText } from "../../i18n/localized-ui";
 
 /**
  * AO's four approval modes, in increasing order of what the agent may do without
  * asking. The hints say what each actually permits rather than naming a policy.
  */
 const APPROVAL_COPY: Record<ApprovalMode, { label: string; hint: string }> = {
-	default: { label: "Default", hint: "Never asks — the worktree is the boundary" },
-	"accept-edits": { label: "Ask outside worktree", hint: "Edits here are free; anything else asks" },
-	auto: { label: "Ask when unsure", hint: "The agent decides when to check with you" },
-	"bypass-permissions": { label: "Never ask", hint: "No approvals, no sandbox" },
+	default: {
+		label: "Default",
+		hint: "Never asks — the worktree is the boundary",
+	},
+	"accept-edits": {
+		label: "Ask outside worktree",
+		hint: "Edits here are free; anything else asks",
+	},
+	auto: {
+		label: "Ask when unsure",
+		hint: "The agent decides when to check with you",
+	},
+	"bypass-permissions": {
+		label: "Never ask",
+		hint: "No approvals, no sandbox",
+	},
 };
 
-const APPROVAL_ORDER: ApprovalMode[] = [
-	"default",
-	"accept-edits",
-	"auto",
-	"bypass-permissions",
-];
+const APPROVAL_ORDER: ApprovalMode[] = ["default", "accept-edits", "auto", "bypass-permissions"];
 
 export function TurnSettingsBar({
 	models,
@@ -75,10 +80,7 @@ export function TurnSettingsBar({
 	onChange?: (next: TurnSettings) => void;
 	/** Controls advertised by an ACP agent for this exact live session. */
 	configOptions?: ChatConfigOption[];
-	onChangeConfigOption?: (
-		optionId: string,
-		value: ChatConfigOptionValue,
-	) => Promise<unknown> | void;
+	onChangeConfigOption?: (optionId: string, value: ChatConfigOptionValue) => Promise<unknown> | void;
 	configPending?: boolean;
 	error?: string;
 	disabled?: boolean;
@@ -87,124 +89,116 @@ export function TurnSettingsBar({
 	const fallback = models.find((model) => model.default);
 	// The label says what will actually be used: the provider's default is a real
 	// answer, not an absence, so it is named rather than shown as "none".
-	const chosenLabel = selected?.displayName ?? fallback?.displayName ?? "Provider default";
+	const chosenLabel = selected?.displayName ?? fallback?.displayName ?? uiText("Provider default");
 	const rerouted = reroute
-		? models.find((model) => model.id === reroute.toModel)?.displayName ?? reroute.toModel
+		? (models.find((model) => model.id === reroute.toModel)?.displayName ?? reroute.toModel)
 		: undefined;
 	const efforts = (selected ?? fallback)?.efforts ?? [];
-	const effortLabel =
-		settings.reasoningEffort ?? (selected ?? fallback)?.defaultEffort ?? undefined;
-	const approvalLabel = APPROVAL_COPY[settings.approvalMode ?? "default"].label;
+	const effortLabel = settings.reasoningEffort ?? (selected ?? fallback)?.defaultEffort ?? undefined;
+	const approvalLabel = uiText(APPROVAL_COPY[settings.approvalMode ?? "default"].label);
 
 	return (
-		<div role="group" aria-label="Turn settings" className="flex min-w-0 flex-col gap-0.5">
+		<div role="group" aria-label={uiText("Turn settings")} className="flex min-w-0 flex-col gap-0.5">
 			<div className="flex flex-wrap items-center gap-0.5">
 				{onChange && models.length > 0 ? (
-				<Picker
-					// What is answering, not what was asked for. The substitution stays
-					// visible beside it rather than replacing the choice, because the choice
-					// is still the user's and still applies to the next turn.
-					label={rerouted ?? chosenLabel}
-					title={
-						reroute
-							? `The provider answered with ${rerouted} instead of ${reroute.fromModel ?? chosenLabel}${
-									reroute.reason ? `: ${reroute.reason}` : ""
-								}`
-							: "Model for the next turn"
-					}
-					disabled={disabled}
-					width="w-80"
-					badge={
-						reroute ? (
-							// A mark, not a second name. Two truncated model names side by side is
-							// less legible than one readable name plus a flag that says it is not
-							// the one that was asked for; the tooltip and the menu spell out which.
-							<Shuffle
-								className="size-3 shrink-0 text-warning"
-								aria-label={`Substituted for ${reroute.fromModel ?? chosenLabel}`}
-							/>
-						) : null
-					}
-				>
-					<DropdownMenuLabel className="flex items-baseline justify-between gap-2">
-						<span>Model</span>
-						<span className="text-[11px] font-normal text-muted-foreground">
-							Applies to the next turn
-						</span>
-					</DropdownMenuLabel>
-					{/* Said inside the menu as well as on the trigger: this is where a user
+					<Picker
+						// What is answering, not what was asked for. The substitution stays
+						// visible beside it rather than replacing the choice, because the choice
+						// is still the user's and still applies to the next turn.
+						label={rerouted ?? chosenLabel}
+						title={
+							reroute
+								? `${uiText("The provider answered with")} ${rerouted} ${uiText("instead of")} ${reroute.fromModel ?? chosenLabel}${
+										reroute.reason ? `: ${reroute.reason}` : ""
+									}`
+								: uiText("Model for the next turn")
+						}
+						disabled={disabled}
+						width="w-80"
+						badge={
+							reroute ? (
+								// A mark, not a second name. Two truncated model names side by side is
+								// less legible than one readable name plus a flag that says it is not
+								// the one that was asked for; the tooltip and the menu spell out which.
+								<Shuffle
+									className="size-3 shrink-0 text-warning"
+									aria-label={`${uiText("Substituted for")} ${reroute.fromModel ?? chosenLabel}`}
+								/>
+							) : null
+						}
+					>
+						<DropdownMenuLabel className="flex items-baseline justify-between gap-2">
+							<span>{uiText("Model")}</span>
+							<span className="text-[11px] font-normal text-muted-foreground">
+								{uiText("Applies to the next turn")}
+							</span>
+						</DropdownMenuLabel>
+						{/* Said inside the menu as well as on the trigger: this is where a user
 					    goes to change the model, and it is where the fact that their last
 					    choice was overridden matters most. */}
-					{reroute ? (
-						<p className="px-2 pb-1.5 text-[11px] leading-snug text-warning">
-							The provider answered with {rerouted} instead of{" "}
-							{reroute.fromModel ?? chosenLabel}
-							{reroute.reason ? ` — ${reroute.reason}` : "."}
-						</p>
-					) : null}
-					{models.map((model) => (
-						<DropdownMenuItem
-							key={model.id}
-							onSelect={() =>
-								// Effort is cleared with the model: a level one model supports is
-								// not necessarily one the next model does.
-								onChange({ ...settings, model: model.id, reasoningEffort: undefined })
-							}
-							className="flex flex-col items-start gap-0.5"
-						>
-							<span className="flex w-full items-baseline gap-2">
-								<span
-									className={cn(
-										"text-xs",
-										model.id === settings.model ? "text-foreground" : "text-muted-foreground",
-									)}
-								>
-									{model.displayName}
-								</span>
-								{model.default ? (
-									<span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-										default
+						{reroute ? (
+							<p className="px-2 pb-1.5 text-[11px] leading-snug text-warning">
+								{uiText("The provider answered with")} {rerouted} {uiText("instead of")}{" "}
+								{reroute.fromModel ?? chosenLabel}
+								{reroute.reason ? ` — ${reroute.reason}` : "."}
+							</p>
+						) : null}
+						{models.map((model) => (
+							<DropdownMenuItem
+								key={model.id}
+								onSelect={() =>
+									// Effort is cleared with the model: a level one model supports is
+									// not necessarily one the next model does.
+									onChange({
+										...settings,
+										model: model.id,
+										reasoningEffort: undefined,
+									})
+								}
+								className="flex flex-col items-start gap-0.5"
+							>
+								<span className="flex w-full items-baseline gap-2">
+									<span
+										className={cn("text-xs", model.id === settings.model ? "text-foreground" : "text-muted-foreground")}
+									>
+										{model.displayName}
 									</span>
-								) : null}
-								{model.id === settings.model ? (
-									<span className="ml-auto text-[10px] text-accent">selected</span>
-								) : null}
-							</span>
-							{model.description ? (
-								<span className="text-[11px] leading-snug text-muted-foreground">
-									{model.description}
+									{model.default ? (
+										<span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+											{uiText("default")}
+										</span>
+									) : null}
+									{model.id === settings.model ? (
+										<span className="ml-auto text-[10px] text-accent">{uiText("selected")}</span>
+									) : null}
 								</span>
-							) : null}
-						</DropdownMenuItem>
-					))}
+								{model.description ? (
+									<span className="text-[11px] leading-snug text-muted-foreground">{model.description}</span>
+								) : null}
+							</DropdownMenuItem>
+						))}
 					</Picker>
 				) : null}
 
 				{onChange && efforts.length > 0 ? (
 					<Picker
-						label={effortLabel ? capitalize(effortLabel) : "Effort"}
-						title="Reasoning effort for the next turn"
+						label={uiText(effortLabel ? capitalize(effortLabel) : "Effort")}
+						title={uiText("Reasoning effort for the next turn")}
 						disabled={disabled}
 						width="w-56"
 					>
-						<DropdownMenuLabel>Reasoning effort</DropdownMenuLabel>
+						<DropdownMenuLabel>{uiText("Reasoning effort")}</DropdownMenuLabel>
 						{efforts.map((effort) => (
 							<DropdownMenuItem
 								key={effort}
 								onSelect={() => onChange({ ...settings, reasoningEffort: effort })}
 								className="text-xs"
 							>
-								<span
-									className={cn(
-										effort === settings.reasoningEffort
-											? "text-foreground"
-											: "text-muted-foreground",
-									)}
-								>
-									{capitalize(effort)}
+								<span className={cn(effort === settings.reasoningEffort ? "text-foreground" : "text-muted-foreground")}>
+									{uiText(capitalize(effort))}
 								</span>
 								{effort === settings.reasoningEffort ? (
-									<span className="ml-auto text-[10px] text-accent">selected</span>
+									<span className="ml-auto text-[10px] text-accent">{uiText("selected")}</span>
 								) : null}
 							</DropdownMenuItem>
 						))}
@@ -214,14 +208,14 @@ export function TurnSettingsBar({
 				{onChange ? (
 					<Picker
 						label={approvalLabel}
-						title="What the agent may do without asking"
+						title={uiText("What the agent may do without asking")}
 						disabled={disabled}
 						width="w-72"
 					>
 						<DropdownMenuLabel className="flex items-baseline justify-between gap-2">
-							<span>Approvals</span>
+							<span>{uiText("Approvals")}</span>
 							<span className="text-[11px] font-normal text-muted-foreground">
-								Applies to the next turn
+								{uiText("Applies to the next turn")}
 							</span>
 						</DropdownMenuLabel>
 						{APPROVAL_ORDER.map((mode) => (
@@ -233,15 +227,13 @@ export function TurnSettingsBar({
 								<span
 									className={cn(
 										"text-xs",
-										mode === (settings.approvalMode ?? "default")
-											? "text-foreground"
-											: "text-muted-foreground",
+										mode === (settings.approvalMode ?? "default") ? "text-foreground" : "text-muted-foreground",
 									)}
 								>
-									{APPROVAL_COPY[mode].label}
+									{uiText(APPROVAL_COPY[mode].label)}
 								</span>
 								<span className="text-[11px] leading-snug text-muted-foreground">
-									{APPROVAL_COPY[mode].hint}
+									{uiText(APPROVAL_COPY[mode].hint)}
 								</span>
 							</DropdownMenuItem>
 						))}
@@ -250,24 +242,22 @@ export function TurnSettingsBar({
 
 				{onChangeConfigOption
 					? (configOptions ?? []).map((option) => (
-						<ConfigOptionPicker
-							key={option.id}
-							option={option}
-							disabled={disabled || configPending}
-							onChange={(value) => {
-								// The hook owns and renders any rejection. Swallowing here avoids an
-								// unhandled promise without pretending the selection succeeded.
-								void Promise.resolve(onChangeConfigOption(option.id, value)).catch(
-									() => {},
-								);
-							}}
-						/>
+							<ConfigOptionPicker
+								key={option.id}
+								option={option}
+								disabled={disabled || configPending}
+								onChange={(value) => {
+									// The hook owns and renders any rejection. Swallowing here avoids an
+									// unhandled promise without pretending the selection succeeded.
+									void Promise.resolve(onChangeConfigOption(option.id, value)).catch(() => {});
+								}}
+							/>
 						))
 					: null}
 			</div>
 			{error ? (
 				<p role="alert" className="px-1 text-[11px] leading-snug text-destructive">
-					{error}
+					{uiText(error)}
 				</p>
 			) : null}
 		</div>
@@ -287,85 +277,62 @@ function ConfigOptionPicker({
 	const label =
 		option.type === "boolean"
 			? option.currentBoolean
-				? "On"
-				: "Off"
-			: currentChoice?.name ?? option.currentValue ?? option.name;
+				? uiText("On")
+				: uiText("Off")
+			: (currentChoice?.name ?? option.currentValue ?? option.name);
 
 	return (
-		<Picker
-			label={label}
-			title={option.description || option.name}
-			disabled={disabled}
-			width="w-72"
-		>
+		<Picker label={label} title={option.description || option.name} disabled={disabled} width="w-72">
 			<DropdownMenuLabel className="flex flex-col gap-0.5">
 				<span>{option.name}</span>
 				{option.description ? (
-					<span className="text-[11px] font-normal leading-snug text-muted-foreground">
-						{option.description}
-					</span>
+					<span className="text-[11px] font-normal leading-snug text-muted-foreground">{option.description}</span>
 				) : null}
 			</DropdownMenuLabel>
-			{option.type === "boolean" ? (
-				[true, false].map((enabled) => (
-					<DropdownMenuItem
-						key={String(enabled)}
-						onSelect={() => onChange({ enabled })}
-						className="text-xs"
-					>
-						<span
-							className={cn(
-								enabled === option.currentBoolean
-									? "text-foreground"
-									: "text-muted-foreground",
-							)}
-						>
-							{enabled ? "On" : "Off"}
-						</span>
-						{enabled === option.currentBoolean ? (
-							<span className="ml-auto text-[10px] text-accent">selected</span>
-						) : null}
-					</DropdownMenuItem>
-				))
-			) : (
-				option.choices.map((choice, index) => {
-					const previousGroup = index > 0 ? option.choices[index - 1]?.group : undefined;
-					return (
-						<Fragment key={choice.value}>
-							{choice.group && choice.group !== previousGroup ? (
-								<DropdownMenuLabel className="pb-1 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-									{choice.groupName || choice.group}
-								</DropdownMenuLabel>
+			{option.type === "boolean"
+				? [true, false].map((enabled) => (
+						<DropdownMenuItem key={String(enabled)} onSelect={() => onChange({ enabled })} className="text-xs">
+							<span className={cn(enabled === option.currentBoolean ? "text-foreground" : "text-muted-foreground")}>
+								{uiText(enabled ? "On" : "Off")}
+							</span>
+							{enabled === option.currentBoolean ? (
+								<span className="ml-auto text-[10px] text-accent">{uiText("selected")}</span>
 							) : null}
-							<DropdownMenuItem
-								onSelect={() => onChange({ value: choice.value })}
-								className="flex flex-col items-start gap-0.5"
-							>
-								<span className="flex w-full items-baseline gap-2">
-									<span
-										className={cn(
-											"text-xs",
-											choice.value === option.currentValue
-												? "text-foreground"
-												: "text-muted-foreground",
-										)}
-									>
-										{choice.name}
-									</span>
-									{choice.value === option.currentValue ? (
-										<span className="ml-auto text-[10px] text-accent">selected</span>
-									) : null}
-								</span>
-								{choice.description ? (
-									<span className="text-[11px] leading-snug text-muted-foreground">
-										{choice.description}
-									</span>
+						</DropdownMenuItem>
+					))
+				: option.choices.map((choice, index) => {
+						const previousGroup = index > 0 ? option.choices[index - 1]?.group : undefined;
+						return (
+							<Fragment key={choice.value}>
+								{choice.group && choice.group !== previousGroup ? (
+									<DropdownMenuLabel className="pb-1 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+										{choice.groupName || choice.group}
+									</DropdownMenuLabel>
 								) : null}
-							</DropdownMenuItem>
-						</Fragment>
-					);
-				})
-			)}
+								<DropdownMenuItem
+									onSelect={() => onChange({ value: choice.value })}
+									className="flex flex-col items-start gap-0.5"
+								>
+									<span className="flex w-full items-baseline gap-2">
+										<span
+											className={cn(
+												"text-xs",
+												choice.value === option.currentValue ? "text-foreground" : "text-muted-foreground",
+											)}
+										>
+											{choice.name}
+										</span>
+										{choice.value === option.currentValue ? (
+											<span className="ml-auto text-[10px] text-accent">{uiText("selected")}</span>
+										) : null}
+									</span>
+									{choice.description ? (
+										<span className="text-[11px] leading-snug text-muted-foreground">{choice.description}</span>
+									) : null}
+								</DropdownMenuItem>
+							</Fragment>
+						);
+					})}
 		</Picker>
 	);
 }

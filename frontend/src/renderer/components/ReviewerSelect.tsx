@@ -4,21 +4,36 @@ import { KNOWN_REVIEWER_HARNESS_IDS } from "../lib/reviewer-harnesses";
 import { AgentAvatar } from "./AgentAvatar";
 import { AgentSelectMenuItem } from "./settings/AgentSelectMenuItem";
 import { SettingsOptionMenu } from "./settings/SettingsOptionMenu";
+import { uiText } from "../i18n/localized-ui";
 
 const REVIEWER_AGENT_PRIORITY = ["claude-code", "codex", "cursor", "opencode", "muse", "aider"] as const;
 const REVIEWER_AGENT_PRIORITY_RANK = new Map<string, number>(
 	REVIEWER_AGENT_PRIORITY.map((agent, index) => [agent, index]),
 );
 
-const HOST_TRUSTED_REVIEWERS = new Set(["agy", "continue", "devin", "droid", "goose", "kimchi", "kimi", "qwen", "vibe"]);
+const HOST_TRUSTED_REVIEWERS = new Set([
+	"agy",
+	"continue",
+	"devin",
+	"droid",
+	"goose",
+	"kimchi",
+	"kimi",
+	"qwen",
+	"vibe",
+]);
 const USER_APPROVED_REVIEWERS = new Set(["auggie", "autohand", "cline", "crush", "grok"]);
 
 export function reviewerTrustWarning(harness: string): string | null {
 	if (HOST_TRUSTED_REVIEWERS.has(harness)) {
-		return "Experimental host-trusted reviewer: this agent is not OS-isolated and may retain shell, plugin, editor, and network access.";
+		return uiText(
+			"Experimental host-trusted reviewer: this agent is not OS-isolated and may retain shell, plugin, editor, and network access.",
+		);
 	}
 	if (USER_APPROVED_REVIEWERS.has(harness)) {
-		return "Experimental user-approved reviewer: AO keeps the agent's native permission prompts enabled; review execution may pause for your approval.";
+		return uiText(
+			"Experimental user-approved reviewer: AO keeps the agent's native permission prompts enabled; review execution may pause for your approval.",
+		);
 	}
 	return null;
 }
@@ -29,7 +44,7 @@ export function ReviewerSelect({
 	triggerClassName,
 	// The same picker serves the project default and a one-off override for the
 	// next run, so the caller names it.
-	ariaLabel = "Default reviewer agent",
+	ariaLabel = uiText("Default reviewer agent"),
 	// Naming what "project default" resolves to matters when nothing has run yet,
 	// so the picker can say which agent that actually is.
 	defaultHarness,
@@ -71,7 +86,11 @@ export function ReviewerSelect({
 	// longer wording, where there is room for it.
 	const menuOptions = [
 		{ value: "__default__", label: defaultOptionLabel },
-		...options.map((agent) => ({ value: agent.id, label: agent.label, disabled: agent.disabled })),
+		...options.map((agent) => ({
+			value: agent.id,
+			label: agent.label,
+			disabled: agent.disabled,
+		})),
 	];
 	const selectedValue = value || "__default__";
 
@@ -94,7 +113,9 @@ export function ReviewerSelect({
 						<AgentAvatar provider={defaultHarness} className="size-icon-lg" />
 					) : null}
 					<span className="min-w-0 truncate">
-						{selected && selected.value !== "__default__" ? selected.label : (defaultTriggerLabel ?? defaultOptionLabel)}
+						{selected && selected.value !== "__default__"
+							? selected.label
+							: (defaultTriggerLabel ?? defaultOptionLabel)}
 					</span>
 				</>
 			)}

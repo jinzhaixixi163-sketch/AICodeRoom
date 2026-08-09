@@ -17,6 +17,7 @@ import { memo } from "react";
 import { Check, ListChecks, Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { ConversationPlan, PlanStepStatus } from "../../types/conversation";
+import { uiText } from "../../i18n/localized-ui";
 
 const STEP_LABEL: Record<PlanStepStatus, string> = {
 	pending: "not started",
@@ -37,16 +38,16 @@ export const TurnPlan = memo(function TurnPlan({
 
 	return (
 		<section
-			aria-label="Agent plan"
+			aria-label={uiText("Agent plan")}
 			className="rounded-lg border border-border bg-surface"
 			data-turn-plan="true"
 		>
 			<div className="flex items-center gap-2 px-3.5 py-2.5">
 				<ListChecks aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-				<strong className="shrink-0 text-xs font-semibold text-foreground">Plan</strong>
+				<strong className="shrink-0 text-xs font-semibold text-foreground">{uiText("Plan")}</strong>
 				{live && done < plan.steps.length ? (
 					<Loader2
-						aria-label="still planning"
+						aria-label={uiText("still planning")}
 						className="size-3 shrink-0 animate-spin text-muted-foreground/60"
 					/>
 				) : null}
@@ -58,9 +59,7 @@ export const TurnPlan = memo(function TurnPlan({
 			</div>
 
 			{plan.explanation ? (
-				<p className="px-3.5 pb-2 text-[11px] leading-relaxed text-muted-foreground">
-					{plan.explanation}
-				</p>
+				<p className="px-3.5 pb-2 text-[11px] leading-relaxed text-muted-foreground">{plan.explanation}</p>
 			) : null}
 
 			{/* A real list, so a screen reader hears "list, 5 items" and the status of each
@@ -70,7 +69,7 @@ export const TurnPlan = memo(function TurnPlan({
 					<li
 						key={`${index}-${step.text}`}
 						className="flex items-start gap-2.5 px-3.5 py-1"
-						aria-label={`${step.text} — ${STEP_LABEL[step.status]}`}
+						aria-label={`${step.text} — ${uiText(STEP_LABEL[step.status])}`}
 					>
 						<StepMark status={step.status} />
 						<span
@@ -99,10 +98,7 @@ export const TurnPlan = memo(function TurnPlan({
  */
 function StepMark({ status }: { status: PlanStepStatus }) {
 	return (
-		<span
-			aria-hidden="true"
-			className="mt-[3px] flex size-3 shrink-0 items-center justify-center"
-		>
+		<span aria-hidden="true" className="mt-[3px] flex size-3 shrink-0 items-center justify-center">
 			{status === "completed" ? (
 				<Check className="size-3 text-success" />
 			) : status === "in_progress" ? (

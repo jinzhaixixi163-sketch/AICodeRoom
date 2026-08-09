@@ -40,6 +40,7 @@ import {
 	Undo2,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { uiText } from "../../i18n/localized-ui";
 import { sameContent, useStableList } from "../../lib/stable-list";
 import { getApiBaseUrl, subscribeApiBaseUrl } from "../../lib/api-client";
 import type { SessionKind } from "../../types/workspace";
@@ -64,11 +65,7 @@ import { ActivityRun } from "./ActivityRun";
 import { TurnPlan } from "./TurnPlan";
 import { TurnSettingsBar } from "./TurnSettingsBar";
 import { ElicitationCard } from "./ElicitationCard";
-import {
-	McpServerBanner,
-	ReauthBanner,
-	ThreadStateBanner,
-} from "./ChatStatusBanners";
+import { McpServerBanner, ReauthBanner, ThreadStateBanner } from "./ChatStatusBanners";
 import {
 	activeTurn,
 	activityPlan,
@@ -119,10 +116,7 @@ export interface ChatWorkspaceProps {
 	hasOlder?: boolean;
 	loadingOlder?: boolean;
 	onLoadOlder?: () => void;
-	onSend?: (
-		text: string,
-		attachments?: { mimeType: string; data: string }[],
-	) => void | Promise<unknown>;
+	onSend?: (text: string, attachments?: { mimeType: string; data: string }[]) => void | Promise<unknown>;
 	onDecide?: (requestId: string, decisionId: string) => void;
 	onResolveInput?: (
 		requestId: string,
@@ -146,10 +140,7 @@ export interface ChatWorkspaceProps {
 	onChooseSettings?: (settings: TurnSettings) => void;
 	/** Live provider-owned options, such as ACP model, effort, mode, and fast mode. */
 	configOptions?: ChatConfigOption[];
-	onChooseConfigOption?: (
-		optionId: string,
-		value: ChatConfigOptionValue,
-	) => Promise<unknown> | void;
+	onChooseConfigOption?: (optionId: string, value: ChatConfigOptionValue) => Promise<unknown> | void;
 	configOptionPending?: boolean;
 	configOptionError?: string;
 	/** Summarize earlier history to reclaim context. */
@@ -281,9 +272,7 @@ export function ChatWorkspace({
 				width: surfaceRect.width,
 			};
 			setTopbarBounds((current) =>
-				current.leftInset === next.leftInset &&
-				current.rightInset === next.rightInset &&
-				current.width === next.width
+				current.leftInset === next.leftInset && current.rightInset === next.rightInset && current.width === next.width
 					? current
 					: next,
 			);
@@ -324,7 +313,7 @@ export function ChatWorkspace({
 	return (
 		<section
 			ref={surfaceRef}
-			aria-label="Chat"
+			aria-label={uiText("Chat")}
 			className="cursor-chat-surface flex h-full min-h-0 flex-col [font-size:var(--chat-font-size)]"
 			data-session-mode={snapshot.mode}
 			data-session-role={sessionRole}
@@ -347,9 +336,7 @@ export function ChatWorkspace({
 			{/* Ordered by what blocks what. A session that needs credentials cannot make
 			    progress at all, so it is stated first; the controller's own health next;
 			    then the two that degrade a session rather than stopping it. */}
-			{snapshot.account ? (
-				<ReauthBanner account={snapshot.account} harness={snapshot.harness} />
-			) : null}
+			{snapshot.account ? <ReauthBanner account={snapshot.account} harness={snapshot.harness} /> : null}
 			<ControllerBanner
 				controller={snapshot.controller}
 				transitioning={controllerTransitioning}
@@ -415,9 +402,7 @@ export function ChatWorkspace({
 									onChangeConfigOption={onChooseConfigOption}
 									configPending={configOptionPending}
 									error={configOptionError}
-									disabled={
-										snapshot.controller.state === "stopped" || configOptionPending
-									}
+									disabled={snapshot.controller.state === "stopped" || configOptionPending}
 								/>
 							) : null
 						}
@@ -448,21 +433,20 @@ export function ChatWorkspace({
 				onOpenChange={(open) => {
 					if (!open) setConfirming(undefined);
 				}}
-				title="Roll back to this point?"
+				title={uiText("Roll back to this point?")}
 				description={
 					<>
 						<p className="text-sm font-medium text-foreground">
-							The agent will forget this exchange and everything after it.
+							{uiText("The agent will forget this exchange and everything after it.")}
 						</p>
 						<p className="mt-1 text-xs text-muted-foreground">
-							Its memory of the conversation is discarded up to this point, so it will not know
-							about anything you or it said later. Files it already changed in the worktree are
-							left exactly as they are; only the conversation is rolled back. This cannot be
-							undone.
+							{uiText(
+								"Its memory of the conversation is discarded up to this point, so it will not know about anything you or it said later. Files it already changed in the worktree are left exactly as they are; only the conversation is rolled back. This cannot be undone.",
+							)}
 						</p>
 					</>
 				}
-				confirmLabel="Roll back"
+				confirmLabel={uiText("Roll back")}
 				destructive
 				busy={rollbackPending}
 				error={rollbackError ?? null}
@@ -491,12 +475,11 @@ function RolledBackNotice({ count }: { count: number }) {
 		<p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
 			<Undo2 aria-hidden="true" className="size-3 shrink-0" />
 			{count === 1
-				? "1 turn was rolled back. The agent no longer remembers it."
-				: `${count} turns were rolled back. The agent no longer remembers them.`}
+				? uiText("1 turn was rolled back. The agent no longer remembers it.")
+				: `${count} ${uiText("turns were rolled back. The agent no longer remembers them.")}`}
 		</p>
 	);
 }
-
 
 /**
  * Batch consecutive plain activities into a run.
@@ -566,9 +549,7 @@ function runsOf(items: ConversationItem[]): TimelineRun[] {
  * understand — dropping an unrecognized item would hide work the agent really did.
  */
 function readableItems(snapshot: ConversationSnapshot): ConversationItem[] {
-	const plannedTurns = new Set(
-		snapshot.turns.filter((turn) => turn.plan?.steps.length).map((turn) => turn.id),
-	);
+	const plannedTurns = new Set(snapshot.turns.filter((turn) => turn.plan?.steps.length).map((turn) => turn.id));
 	return snapshot.items.filter((item) => {
 		if (item.kind !== "activity") return true;
 		if (item.activityKind === "usage") return false;
@@ -615,11 +596,13 @@ function ChatHeader({
 					<div
 						className="flex min-w-0 shrink items-center pr-1.5"
 						data-testid="session-terminal-region"
-						style={{ width: topbarBounds.width > 0 ? topbarBounds.width : "100%" }}
+						style={{
+							width: topbarBounds.width > 0 ? topbarBounds.width : "100%",
+						}}
 					>
 						<div className="flex h-full min-w-flex-min flex-1 items-center">
 							<div
-								aria-label="Chat tabs"
+								aria-label={uiText("Chat tabs")}
 								className="scrollbar-none flex min-w-flex-min flex-1 self-stretch items-center overflow-x-auto"
 								role="tablist"
 							>
@@ -643,12 +626,12 @@ function ChatHeader({
 								</span>
 							</div>
 							<Button
-								aria-label="New terminal"
+								aria-label={uiText("New terminal")}
 								className="shrink-0 text-muted-foreground"
 								disabled={!onOpenShell || openingShell}
 								onClick={onOpenShell}
 								size="icon-sm"
-								title={shellError || "New terminal"}
+								title={shellError ? uiText(shellError) : uiText("New terminal")}
 								type="button"
 								variant="outline"
 							>
@@ -660,26 +643,26 @@ function ChatHeader({
 							</Button>
 						</div>
 						<div
-							aria-label="Chat display controls"
+							aria-label={uiText("Chat display controls")}
 							className="ml-1.5 flex shrink-0 items-center gap-0.5 border-l border-border/70 pl-1.5"
 							role="toolbar"
 						>
 							<ChatTopbarControl
 								disabled={fontSize <= CHAT_FONT_SIZE_MIN}
-								label="Decrease font size"
+								label={uiText("Decrease font size")}
 								onClick={onDecreaseFontSize}
 							>
 								<Minus aria-hidden="true" className="size-icon-sm" />
 							</ChatTopbarControl>
 							<span
-								aria-label={`Chat font size: ${fontSize} pixels`}
+								aria-label={`${uiText("Chat font size:")} ${fontSize} ${uiText("pixels")}`}
 								className="w-font-size-label text-center font-mono text-micro tabular-nums text-muted-foreground"
 							>
 								{fontSize}px
 							</span>
 							<ChatTopbarControl
 								disabled={fontSize >= CHAT_FONT_SIZE_MAX}
-								label="Increase font size"
+								label={uiText("Increase font size")}
 								onClick={onIncreaseFontSize}
 							>
 								<Plus aria-hidden="true" className="size-icon-sm" />
@@ -687,7 +670,7 @@ function ChatHeader({
 							<div aria-hidden="true" className="mx-1 h-4 w-px bg-border/70" />
 							<ChatTopbarControl
 								isPressed={isFullscreen}
-								label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+								label={uiText(isFullscreen ? "Exit fullscreen" : "Fullscreen")}
 								onClick={onToggleFullscreen}
 							>
 								{isFullscreen ? (
@@ -752,14 +735,14 @@ function CompactButton({
 }) {
 	if (!onCompact) return null;
 	if (unavailable === "This agent cannot compact its history") {
-		return <span className="text-[11px] text-muted-foreground">{unavailable}</span>;
+		return <span className="text-[11px] text-muted-foreground">{uiText(unavailable)}</span>;
 	}
 
 	const title = turnInFlight
-		? "Finish or stop the current turn before compacting"
+		? uiText("Finish or stop the current turn before compacting")
 		: compactedAt
-			? `Summarize earlier history to reclaim context. Last compacted ${new Date(compactedAt).toLocaleString()}.`
-			: "Summarize earlier history to reclaim context";
+			? `${uiText("Summarize earlier history to reclaim context. Last compacted")} ${new Date(compactedAt).toLocaleString()}${uiText(".")}`
+			: uiText("Summarize earlier history to reclaim context");
 
 	return (
 		<Button
@@ -769,7 +752,7 @@ function CompactButton({
 			onClick={onCompact}
 			disabled={compacting || turnInFlight}
 			title={title}
-			aria-label="Compact conversation history"
+			aria-label={uiText("Compact conversation history")}
 			className="h-5 gap-1 px-1.5 text-[11px]"
 		>
 			{compacting ? (
@@ -777,7 +760,7 @@ function CompactButton({
 			) : (
 				<Archive aria-hidden="true" className="size-3" />
 			)}
-			{compacting ? "Compacting…" : "Compact"}
+			{uiText(compacting ? "Compacting…" : "Compact")}
 		</Button>
 	);
 }
@@ -812,9 +795,18 @@ function ControllerBanner({
 	if (controller.state === "ready" || controller.state === "busy") return null;
 
 	const copy: Partial<Record<ControllerState, { title: string; tone: string }>> = {
-		connecting: { title: "Connecting to the agent…", tone: "text-muted-foreground" },
-		recovering: { title: "Reconnecting to the agent", tone: "text-warning" },
-		stopped: { title: "The agent controller stopped", tone: "text-destructive" },
+		connecting: {
+			title: uiText("Connecting to the agent…"),
+			tone: "text-muted-foreground",
+		},
+		recovering: {
+			title: uiText("Reconnecting to the agent"),
+			tone: "text-warning",
+		},
+		stopped: {
+			title: uiText("The agent controller stopped"),
+			tone: "text-destructive",
+		},
 	};
 	const shown = copy[controller.state];
 	if (!shown) return null;
@@ -838,28 +830,20 @@ function ControllerBanner({
 				{controller.state === "stopped" ? (
 					<>
 						<span className="text-[11px] leading-snug text-muted-foreground">
-							History is kept. Resume the agent or open a shell in the same worktree.
+							{uiText("History is kept. Resume the agent or open a shell in the same worktree.")}
 						</span>
 						{resumeError || shellError ? (
-							<span className="text-[11px] leading-snug text-destructive">
-								{resumeError ?? shellError}
-							</span>
+							<span className="text-[11px] leading-snug text-destructive">{resumeError ?? shellError}</span>
 						) : null}
 						<div className="mt-1.5 flex flex-wrap gap-2">
 							{onResume ? (
 								<Button type="button" size="sm" variant="outline" onClick={onResume} disabled={resuming}>
-									{resuming ? "Resuming…" : "Resume agent"}
+									{uiText(resuming ? "Resuming…" : "Resume agent")}
 								</Button>
 							) : null}
 							{onOpenShell ? (
-								<Button
-									type="button"
-									size="sm"
-									variant="ghost"
-									onClick={onOpenShell}
-									disabled={openingShell}
-								>
-									{openingShell ? "Opening shell…" : "Open shell"}
+								<Button type="button" size="sm" variant="ghost" onClick={onOpenShell} disabled={openingShell}>
+									{uiText(openingShell ? "Opening shell…" : "Open shell")}
 								</Button>
 							) : null}
 						</div>
@@ -905,7 +889,11 @@ function Timeline({
 	const scroller = useRef<HTMLDivElement>(null);
 	const scrollContent = useRef<HTMLDivElement>(null);
 	const scrollTrack = useRef<HTMLDivElement>(null);
-	const drag = useRef<{ pointerId: number; startY: number; startScrollTop: number } | null>(null);
+	const drag = useRef<{
+		pointerId: number;
+		startY: number;
+		startScrollTop: number;
+	} | null>(null);
 	const [pinned, setPinned] = useState(true);
 	const [hoveredMarker, setHoveredMarker] = useState<number | null>(null);
 	const [scrollbar, setScrollbar] = useState({
@@ -935,15 +923,11 @@ function Timeline({
 		const maxScroll = Math.max(0, node.scrollHeight - node.clientHeight);
 		const visible = maxScroll > 1;
 		const trackHeight = track.clientHeight;
-		const height = visible
-			? Math.max(40, trackHeight * (node.clientHeight / node.scrollHeight))
-			: trackHeight;
+		const height = visible ? Math.max(40, trackHeight * (node.clientHeight / node.scrollHeight)) : trackHeight;
 		const travel = Math.max(0, trackHeight - height);
 		const fraction = maxScroll > 0 ? Math.min(1, Math.max(0, node.scrollTop / maxScroll)) : 0;
 		const viewportRect = node.getBoundingClientRect();
-		const anchors = Array.from(
-			scrollContent.current?.querySelectorAll<HTMLElement>("[data-chat-scroll-anchor]") ?? [],
-		);
+		const anchors = Array.from(scrollContent.current?.querySelectorAll<HTMLElement>("[data-chat-scroll-anchor]") ?? []);
 		const markerGap = anchors.length > 1 ? Math.min(18, (trackHeight - 12) / (anchors.length - 1)) : 0;
 		const markerStart = (trackHeight - markerGap * Math.max(0, anchors.length - 1)) / 2;
 		const markers = anchors.map((anchor, index) => {
@@ -1048,10 +1032,7 @@ function Timeline({
 			const pointerY = event.clientY - track.getBoundingClientRect().top;
 			let nearest = 0;
 			for (let index = 1; index < scrollbar.markers.length; index += 1) {
-				if (
-					Math.abs(scrollbar.markers[index]!.top - pointerY) <
-					Math.abs(scrollbar.markers[nearest]!.top - pointerY)
-				) {
+				if (Math.abs(scrollbar.markers[index]!.top - pointerY) < Math.abs(scrollbar.markers[nearest]!.top - pointerY)) {
 					nearest = index;
 				}
 			}
@@ -1112,7 +1093,7 @@ function Timeline({
 				className="chat-scroll-viewport cursor-chat-timeline h-full select-text overflow-y-auto px-4 py-5"
 				role="log"
 				aria-live="polite"
-				aria-label="Conversation"
+				aria-label={uiText("Conversation")}
 			>
 				<div ref={scrollContent} className="mx-auto flex max-w-3xl flex-col gap-4.5">
 					{hasOlder ? (
@@ -1126,7 +1107,7 @@ function Timeline({
 								className="gap-1.5 text-muted-foreground"
 							>
 								{loadingOlder ? <Loader2 aria-hidden="true" className="size-3.5 animate-spin" /> : null}
-								Load earlier messages
+								{uiText("Load earlier messages")}
 							</Button>
 						</div>
 					) : null}
@@ -1139,9 +1120,9 @@ function Timeline({
 								onDecide={decide}
 								onResolveInput={resolveInput}
 								onRollback={rollback}
-							// Only a turn the provider actually accepted can be undone: a turn it
-							// never saw holds no history to discard, and the daemon refuses it
-							// rather than hiding rows the agent still remembers.
+								// Only a turn the provider actually accepted can be undone: a turn it
+								// never saw holds no history to discard, and the daemon refuses it
+								// rather than hiding rows the agent still remembers.
 								canRollback={Boolean(onRollback && group.turnId && group.rollbackable)}
 								busy={busy}
 								queued={Boolean(group.turnId && queued.has(group.turnId))}
@@ -1155,7 +1136,7 @@ function Timeline({
 				ref={scrollTrack}
 				role="scrollbar"
 				tabIndex={scrollbar.visible ? 0 : -1}
-				aria-label="Conversation scrollbar"
+				aria-label={uiText("Conversation scrollbar")}
 				aria-orientation="vertical"
 				aria-valuemin={0}
 				aria-valuemax={100}
@@ -1238,7 +1219,7 @@ function Timeline({
 					className="absolute bottom-3 left-1/2 -translate-x-1/2 gap-1.5 bg-raised shadow-sm hover:bg-surface dark:bg-raised dark:hover:bg-surface"
 				>
 					<ArrowDown aria-hidden="true" className="size-3.5" />
-					Jump to latest
+					{uiText("Jump to latest")}
 				</Button>
 			) : null}
 		</div>
@@ -1275,9 +1256,7 @@ const TurnGroup = memo(function TurnGroup({
 }) {
 	const runs = useMemo(() => runsOf(group.items), [group.items]);
 	const copyableMessageId = group.outcome
-		? [...group.items]
-				.reverse()
-				.find((item) => item.kind === "message" && item.role === "assistant")?.id
+		? [...group.items].reverse().find((item) => item.kind === "message" && item.role === "assistant")?.id
 		: undefined;
 	const latestItemId = group.items.at(-1)?.id;
 	return (
@@ -1286,9 +1265,7 @@ const TurnGroup = memo(function TurnGroup({
 				run.kind === "activities" ? (
 					<ActivityRun
 						key={run.key}
-						activities={run.items.filter(
-							(item): item is ConversationActivity => item.kind === "activity",
-						)}
+						activities={run.items.filter((item): item is ConversationActivity => item.kind === "activity")}
 					/>
 				) : (
 					<TimelineItem
@@ -1355,13 +1332,7 @@ function TimelineItem({
 }) {
 	if (item.kind === "message") {
 		if (item.role === "assistant") {
-			return (
-				<AssistantMessage
-					message={item}
-					showCopy={showCopy}
-					showStreamingIndicator={showStreamingIndicator}
-				/>
-			);
+			return <AssistantMessage message={item} showCopy={showCopy} showStreamingIndicator={showStreamingIndicator} />;
 		}
 		// A user-role message that did not come from this human is an automation or
 		// worker relay, and is attributed differently.
@@ -1433,9 +1404,7 @@ function sameGroup(a: TimelineGroup, b: TimelineGroup): boolean {
  * harness passes literals, so without this every memo boundary below would be
  * invalidated by the one prop that never meaningfully changes.
  */
-function useStableCallback<Args extends unknown[]>(
-	fn: ((...args: Args) => void) | undefined,
-): (...args: Args) => void {
+function useStableCallback<Args extends unknown[]>(fn: ((...args: Args) => void) | undefined): (...args: Args) => void {
 	const latest = useRef(fn);
 	useEffect(() => {
 		latest.current = fn;
@@ -1451,7 +1420,11 @@ type TimelineGroup = {
 	/** Where this group sits in the timeline: the lowest sequence it contains. */
 	anchor: number;
 	items: ConversationItem[];
-	outcome?: { state: "completed" | "interrupted" | "failed"; durationMs?: number; error?: string };
+	outcome?: {
+		state: "completed" | "interrupted" | "failed";
+		durationMs?: number;
+		error?: string;
+	};
 	/** What the turn changed on disk, when the daemon reported anything. */
 	diff?: TurnDiff;
 	/** The agent's plan for this turn, when it made one. */
@@ -1469,14 +1442,12 @@ function groupPreview(group: TimelineGroup): GroupPreview {
 	const userMessage = group.items.find(
 		(item) => item.kind === "message" && item.role === "user" && item.origin === "human",
 	);
-	const assistantMessage = [...group.items].reverse().find(
-		(item) => item.kind === "message" && item.role === "assistant" && item.text.trim() !== "",
-	);
-	const firstActivity = group.items.find(
-		(item): item is ConversationActivity => item.kind === "activity",
-	);
+	const assistantMessage = [...group.items]
+		.reverse()
+		.find((item) => item.kind === "message" && item.role === "assistant" && item.text.trim() !== "");
+	const firstActivity = group.items.find((item): item is ConversationActivity => item.kind === "activity");
 	const title = previewText(
-		userMessage?.kind === "message" ? userMessage.text : firstActivity?.summary || "Conversation update",
+		userMessage?.kind === "message" ? userMessage.text : firstActivity?.summary || uiText("Conversation update"),
 		120,
 	);
 	const detailSource =
@@ -1533,7 +1504,11 @@ function groupByTurn(snapshot: ConversationSnapshot): TimelineGroup[] {
 				last.items.push(item);
 				continue;
 			}
-			groups.push({ key: `loose-${item.sequence}`, anchor: item.sequence, items: [item] });
+			groups.push({
+				key: `loose-${item.sequence}`,
+				anchor: item.sequence,
+				items: [item],
+			});
 			continue;
 		}
 		const existing = groupForTurn.get(item.turnId);
@@ -1583,11 +1558,12 @@ function EmptyState({ harness }: { harness: string }) {
 		<div className="flex min-h-0 flex-1 items-center justify-center px-6">
 			<div className="flex max-w-sm flex-col items-center gap-2 text-center">
 				<MessageSquare aria-hidden="true" className="size-6 text-muted-foreground" />
-				<strong className="text-sm font-medium text-foreground">Start the conversation</strong>
+				<strong className="text-sm font-medium text-foreground">{uiText("Start the conversation")}</strong>
 				<p className="text-xs leading-relaxed text-muted-foreground">
-					This session talks to {harness} over a structured connection. Tool calls, file changes,
-					and approvals appear here as they happen. The Terminal tab opens a plain shell in the
-					same worktree — it is not a second copy of the agent.
+					{uiText("This session talks to")} {harness}{" "}
+					{uiText(
+						"over a structured connection. Tool calls, file changes, and approvals appear here as they happen. The Terminal tab opens a plain shell in the same worktree — it is not a second copy of the agent.",
+					)}
 				</p>
 			</div>
 		</div>
@@ -1624,35 +1600,26 @@ function LiveTurnBar({
 		<div className="flex items-center gap-2.5 rounded-md border border-border bg-surface px-3 py-2">
 			{blocked ? (
 				<span role="alert" className="sr-only">
-					The agent is waiting for your decision.
+					{uiText("The agent is waiting for your decision.")}
 				</span>
 			) : null}
 			{blocked ? (
 				<TriangleAlert aria-hidden="true" className="size-3.5 shrink-0 text-warning" />
 			) : (
-				<Loader2
-					aria-hidden="true"
-					className="size-3.5 shrink-0 animate-spin text-status-working opacity-100"
-				/>
+				<Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-status-working opacity-100" />
 			)}
 			<strong className={cn("text-xs font-medium", blocked ? "text-warning" : "text-foreground")}>
-				{blocked ? "Waiting for your decision" : "Working"}
+				{uiText(blocked ? "Waiting for your decision" : "Working")}
 			</strong>
 			<span className="text-[11px] tabular-nums text-muted-foreground">{elapsed}</span>
 			{queuedCount > 0 ? (
 				<span className="text-[11px] text-muted-foreground">
-					{queuedCount} {queuedCount === 1 ? "message" : "messages"} queued
+					{queuedCount} {uiText(queuedCount === 1 ? "message" : "messages")} {uiText("queued")}
 				</span>
 			) : null}
-			<Button
-				type="button"
-				size="sm"
-				variant="ghost"
-				onClick={onInterrupt}
-				className="ml-auto gap-1.5"
-			>
+			<Button type="button" size="sm" variant="ghost" onClick={onInterrupt} className="ml-auto gap-1.5">
 				<Square aria-hidden="true" className="size-3" />
-				{queuedCount > 0 ? "Stop and clear queue" : "Stop turn"}
+				{uiText(queuedCount > 0 ? "Stop and clear queue" : "Stop turn")}
 			</Button>
 		</div>
 	);

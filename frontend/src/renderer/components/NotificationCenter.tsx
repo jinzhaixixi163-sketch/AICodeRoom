@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMarkAllNotificationsReadMutation, useNotificationsQuery } from "../hooks/useNotificationsQuery";
 import { useRestoreSession } from "../hooks/useRestoreSession";
 import { useWorkspaceQuery } from "../hooks/useWorkspaceQuery";
+import { uiText } from "../i18n/localized-ui";
 import { aoBridge } from "../lib/bridge";
 import { openLinkInSystemBrowser } from "../lib/external-link-policy";
 import { formatTimeCompact } from "../lib/format-time";
@@ -50,7 +51,9 @@ function useNotificationTargetNavigation() {
 		(notification: NotificationDTO) => {
 			const sessionId = notification.target.sessionId || notification.sessionId;
 			if (!sessionId) return;
-			void captureRendererEvent("ao.renderer.notification_opened", { target: "session" });
+			void captureRendererEvent("ao.renderer.notification_opened", {
+				target: "session",
+			});
 			navigateToSession(notification.projectId, sessionId);
 		},
 		[navigateToSession],
@@ -59,7 +62,9 @@ function useNotificationTargetNavigation() {
 	const openPrimary = useCallback(
 		(notification: NotificationDTO) => {
 			if (notification.target.kind === "pr" && notification.target.prUrl) {
-				void captureRendererEvent("ao.renderer.notification_opened", { target: "pr" });
+				void captureRendererEvent("ao.renderer.notification_opened", {
+					target: "pr",
+				});
 				window.open(notification.target.prUrl, "_blank", "noopener,noreferrer");
 				return;
 			}
@@ -172,7 +177,10 @@ export function NotificationCenter({ style }: NotificationCenterProps) {
 		const map = new Map<string, { projectName: string; sessionName: string }>();
 		for (const workspace of workspaces ?? []) {
 			for (const session of workspace.sessions) {
-				map.set(session.id, { projectName: workspace.name, sessionName: session.title });
+				map.set(session.id, {
+					projectName: workspace.name,
+					sessionName: session.title,
+				});
 			}
 		}
 		return map;
@@ -225,11 +233,19 @@ export function NotificationCenter({ style }: NotificationCenterProps) {
 		});
 
 		setMarkReadError(null);
-		void captureRendererEvent("ao.renderer.notification_mark_read_requested", { scope: "all" });
+		void captureRendererEvent("ao.renderer.notification_mark_read_requested", {
+			scope: "all",
+		});
 		void markAllMutate(newly)
-			.then(() => captureRendererEvent("ao.renderer.notification_mark_read_succeeded", { scope: "all" }))
+			.then(() =>
+				captureRendererEvent("ao.renderer.notification_mark_read_succeeded", {
+					scope: "all",
+				}),
+			)
 			.catch((error: unknown) => {
-				void captureRendererEvent("ao.renderer.notification_mark_read_failed", { scope: "all" });
+				void captureRendererEvent("ao.renderer.notification_mark_read_failed", {
+					scope: "all",
+				});
 				for (const id of newly) acknowledgedIdsRef.current.delete(id);
 				setMarkReadError(error instanceof Error ? error.message : t("notify.couldNotMarkAllRead"));
 			});
@@ -510,7 +526,9 @@ function NotificationItem({
 								<>
 									{titleLink.before}
 									<a
-										aria-label={t("inspector.openPR", { number: titleLink.number })}
+										aria-label={t("inspector.openPR", {
+											number: titleLink.number,
+										})}
 										className="inline-flex items-center gap-0.5 underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
 										href={titleLink.url}
 										onClick={(event) => {
@@ -584,7 +602,13 @@ type NotificationCopy = Pick<NotificationDTO, "body" | "title">;
 function notificationPRTitleLink(
 	notification: NotificationDTO,
 	title: string,
-): { after: string; before: string; label: string; number: string; url: string } | null {
+): {
+	after: string;
+	before: string;
+	label: string;
+	number: string;
+	url: string;
+} | null {
 	const url = notification.target.kind === "pr" ? notification.target.prUrl : notification.prUrl;
 	if (!url) return null;
 	const match = /\bPR\s*#(\d+)\b/i.exec(title);
@@ -616,7 +640,7 @@ function notificationCopy(notification: NotificationDTO, sessionName?: string): 
 
 	return {
 		title,
-		body: `PR from session ${session} is ready to merge. CI passed with no blocking review feedback.`,
+		body: `${uiText("PR from session")} ${session} ${uiText("is ready to merge. CI passed with no blocking review feedback.")}`,
 	};
 }
 
@@ -624,7 +648,7 @@ function readyNotificationFallbackTitle(notification: NotificationDTO): string {
 	const titleNumber = notification.title.match(/\bPR\s*#(\d+)\b/i)?.[1];
 	const urlNumber = notification.prUrl.match(/\/pull\/(\d+)(?:\/|$)/)?.[1];
 	const number = titleNumber ?? urlNumber;
-	return number ? `PR #${number} is ready to merge` : "Pull request is ready to merge";
+	return number ? `PR #${number} ${uiText("is ready to merge")}` : uiText("Pull request is ready to merge");
 }
 
 function notificationMentions(notification: NotificationCopy, value: string): boolean {

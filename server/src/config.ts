@@ -21,7 +21,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
 	if (!SCHEMA_PATTERN.test(databaseSchema)) throw new Error("AICODEROOM_DATABASE_SCHEMA is invalid");
 
 	const allowedOrigins = new Set(
-		(env.AICODEROOM_ALLOWED_ORIGINS || "app://renderer,http://127.0.0.1:5173,http://localhost:5173")
+		(
+			env.AICODEROOM_ALLOWED_ORIGINS ||
+			"app://renderer,http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174,http://localhost:5174"
+		)
 			.split(",")
 			.map((origin) => origin.trim())
 			.filter(Boolean),
@@ -33,6 +36,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
 		host: env.AICODEROOM_HOST?.trim() || "127.0.0.1",
 		port: integerFromEnv(env.AICODEROOM_PORT, 8788, "AICODEROOM_PORT"),
 		allowedOrigins,
-		sessionTtlSeconds: integerFromEnv(env.AICODEROOM_SESSION_TTL_SECONDS, 60 * 60 * 24 * 30, "AICODEROOM_SESSION_TTL_SECONDS"),
+		sessionTtlSeconds: integerFromEnv(
+			env.AICODEROOM_SESSION_TTL_SECONDS,
+			60 * 60 * 24 * 30,
+			"AICODEROOM_SESSION_TTL_SECONDS",
+		),
 	};
 }
