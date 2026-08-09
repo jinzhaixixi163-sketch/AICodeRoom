@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { installFakeAccount } from "./support/fake-bridge";
 
 // #2483 TRM-001, RENDERER SLICE. Under dev:web there is no window.ao and no PTY,
 // so TerminalPane renders its deterministic browser-preview transcript (the
@@ -9,6 +10,7 @@ import { expect, test } from "@playwright/test";
 // work. Not the canonical T0/P0 gate.
 
 test("renderer: terminal attaches on session detail and renders a stream @T0 @TRM", async ({ page }) => {
+	await installFakeAccount(page);
 	await page.goto("/#/projects/ao-demo/sessions/demo-working");
 	await expect(page.getByTestId("session-detail")).toBeVisible();
 

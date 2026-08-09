@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFakeAgent, installFakeBridge } from "./support/fake-bridge";
+import { installFakeAccount, installFakeAgent, installFakeBridge } from "./support/fake-bridge";
 
 // INS/DMN/BRD/SET RENDERER SMOKE (issue #2483, renderer slice).
 //
@@ -60,6 +60,7 @@ test("renderer: first-run home renders with the app launched @T0 @INS", async ({
 	// and we assert the home board surface + a mounted daemon-status indicator
 	// (proof the shell booted). The empty-state testid (`board-welcome`) is wired
 	// for the real empty-dir pod run.
+	await installFakeAccount(page);
 	await page.goto("/");
 	await expect(page.getByTestId("board")).toBeVisible();
 	await expect(page.getByTestId("daemon-status")).toBeAttached();
@@ -159,6 +160,7 @@ test("renderer: board state rehydrates after a renderer relaunch @T0 @DMN", asyn
 
 // #2483 BRD-001.
 test("renderer: board renders all status columns @T0 @BRD", async ({ page }) => {
+	await installFakeAccount(page);
 	await page.goto("/");
 	const columns = page.getByTestId("board-column");
 	await expect(columns).toHaveCount(4);
@@ -172,6 +174,7 @@ test("renderer: board renders all status columns @T0 @BRD", async ({ page }) => 
 // #2483 BRD-012.
 test("renderer: route nav home to board to session detail and back @T0 @BRD", async ({ page }) => {
 	// home (global board)
+	await installFakeAccount(page);
 	await page.goto("/");
 	await expect(page.getByTestId("board")).toBeVisible();
 
@@ -199,6 +202,7 @@ test("renderer: global settings page renders all sections @T0 @SET", async ({ pa
 	// help; the Migration section no longer renders there, so "all sections"
 	// means these. Updates keeps its per-section hook; General/help are asserted
 	// by their user-visible headings.
+	await installFakeAccount(page);
 	await page.goto("/#/settings");
 	await expect(page.getByTestId("settings-page")).toBeVisible();
 	await page.getByRole("button", { name: "Updates" }).click();

@@ -35,10 +35,60 @@ export type FakeBridgeOptions = {
 	daemonPort?: number;
 };
 
+async function installFakeControlPlane(page: Page): Promise<void> {
+	await page.route("http://127.0.0.1:8788/v1/**", async (route) => {
+		const request = route.request();
+		const url = new URL(request.url());
+		const method = request.method();
+		if (method === "GET" && url.pathname === "/v1/auth/me") {
+			await route.fulfill({
+				json: { user: { id: "e2e-user", email: "e2e@aicoderoom.local", displayName: "E2E User" } },
+			});
+			return;
+		}
+		if (method === "POST" && url.pathname === "/v1/auth/logout") {
+			await route.fulfill({ json: { ok: true } });
+			return;
+		}
+		if (method === "POST" && url.pathname === "/v1/projects") {
+			const body = request.postDataJSON() as { clientProjectId?: string; name?: string };
+			await route.fulfill({
+				json: {
+					project: {
+						id: `e2e:${body.clientProjectId ?? "project"}`,
+						name: body.name ?? "E2E Project",
+						sourceKind: "local",
+						clientProjectId: body.clientProjectId ?? null,
+						role: "owner",
+					},
+				},
+			});
+			return;
+		}
+		if (method === "POST" && /^\/v1\/projects\/[^/]+\/tasks$/.test(url.pathname)) {
+			await route.fulfill({ json: { task: { id: "e2e-control-plane-task" } } });
+			return;
+		}
+		if (method === "PATCH" && /^\/v1\/tasks\/[^/]+$/.test(url.pathname)) {
+			await route.fulfill({ json: { task: { id: url.pathname.split("/").at(-1) } } });
+			return;
+		}
+		await route.fulfill({ status: 404, json: { error: { code: "not_found", message: "Not found in E2E control plane" } } });
+	});
+}
+
+export async function installFakeAccount(page: Page): Promise<void> {
+	await installFakeControlPlane(page);
+	await page.addInitScript(() => {
+		window.sessionStorage.setItem("aicoderoom.preview.token", "e2e-account-token");
+	});
+}
+
 export async function installFakeBridge(page: Page, opts: FakeBridgeOptions = {}): Promise<void> {
 	const version = opts.version ?? "9.9.9-test";
 	const daemonState = opts.daemonState ?? "ready";
 	const daemonPort = opts.daemonPort ?? 8080;
+	await installFakeControlPlane(page);
 
 	await page.addInitScript(
 		({ version, daemonState, daemonPort }) => {
@@ -57,7 +107,17 @@ export async function installFakeBridge(page: Page, opts: FakeBridgeOptions = {}
 			// Full AoBridge surface (mirrors src/preload.ts) so any renderer call
 			// resolves — an incomplete object would throw the moment the app touched
 			// a missing method.
+			let accountToken: string | null = "e2e-account-token";
 			const ao = {
+				account: {
+					getToken: async () => accountToken,
+					setToken: async (token: string) => {
+						accountToken = token;
+					},
+					clearToken: async () => {
+						accountToken = null;
+					},
+				},
 				app: {
 					getVersion: async () => version,
 					chooseDirectory: async () => null,
@@ -269,6 +329,7 @@ export async function installFakeAgent(page: Page, opts: FakeAgentOptions = {}):
 	const projectName = opts.projectName ?? "fake-proj";
 	const platform = opts.platform ?? null;
 	const workers = opts.workers ?? [];
+	await installFakeControlPlane(page);
 
 	await page.addInitScript(
 		({ version, daemonPort, projectId, projectName, platform, workers }) => {
@@ -474,7 +535,17 @@ export async function installFakeAgent(page: Page, opts: FakeAgentOptions = {}):
 				isLoading: false,
 				...(error ? { error } : {}),
 			});
+			let accountToken: string | null = "e2e-account-token";
 			const ao = {
+				account: {
+					getToken: async () => accountToken,
+					setToken: async (token: string) => {
+						accountToken = token;
+					},
+					clearToken: async () => {
+						accountToken = null;
+					},
+				},
 				app: {
 					getVersion: async () => version,
 					chooseDirectory: async () => null,
