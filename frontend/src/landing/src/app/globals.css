@@ -160,6 +160,60 @@ body {
 .aicr-nav a:hover {
   color: #fff;
 }
+.aicr-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.aicr-language-switcher {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid var(--aicr-line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #a9aaae;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.aicr-language-switcher:hover,
+.aicr-language-switcher:focus-within {
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.aicr-language-switcher select {
+  max-width: 92px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.aicr-language-switcher option {
+  background: #12161a;
+  color: #e9ebec;
+}
+.aicr-language-switcher.compact {
+  height: 32px;
+  border-radius: 8px;
+  background: #111419;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .aicr-nav-cta,
 .aicr-primary-button,
 .aicr-secondary-button,
@@ -639,6 +693,7 @@ body {
 .aicr-safety-copy h2,
 .aicr-usage-copy h2 {
   margin: 18px 0 0;
+  white-space: pre-line;
   font-size: clamp(36px, 5vw, 60px);
   line-height: 1.08;
   letter-spacing: -0.055em;
@@ -1729,9 +1784,16 @@ body {
 @media (max-width: 620px) {
   .aicr-header-inner {
     height: 64px;
+    gap: 12px;
   }
   .aicr-nav-cta {
-    padding: 0 12px;
+    display: none;
+  }
+  .aicr-language-switcher {
+    padding: 0 8px;
+  }
+  .aicr-language-switcher select {
+    max-width: 84px;
   }
   .aicr-hero {
     padding: 120px 0 72px;
@@ -1808,6 +1870,13 @@ body {
     position: sticky;
     top: 0;
     z-index: 5;
+    padding: 0 14px;
+  }
+  .aicr-workspace-actions {
+    gap: 7px;
+  }
+  .aicr-workspace-actions .aicr-language-switcher {
+    max-width: 108px;
   }
   .aicr-workspace-body {
     height: auto;

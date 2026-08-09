@@ -1,6 +1,7 @@
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import "./globals.css";
+import { SiteI18nProvider } from "./site-i18n";
 
 const description =
   "AICodeRoom 是多用户、多项目、可邀请协作的 AI 软件开发工作台。";
@@ -54,7 +55,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN" className={`dark ${GeistSans.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <SiteI18nProvider>{children}</SiteI18nProvider>
+      </body>
     </html>
   );
 }
