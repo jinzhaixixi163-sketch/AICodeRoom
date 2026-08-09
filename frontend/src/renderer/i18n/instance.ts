@@ -1,6 +1,6 @@
 import { createInstance, type i18n } from "i18next";
 import { initReactI18next } from "react-i18next";
-import { APP_LOCALES, DEFAULT_LOCALE, type AppLocale } from "./locales";
+import { APP_LOCALES, DEFAULT_LOCALE, FALLBACK_LOCALE, type AppLocale } from "./locales";
 import {
 	deMessages,
 	enMessages,
@@ -36,7 +36,7 @@ function initializeI18n(instance: i18n, locale: AppLocale, catalogs: Translation
 	);
 	void instance.init({
 		lng: locale,
-		fallbackLng: DEFAULT_LOCALE,
+		fallbackLng: FALLBACK_LOCALE,
 		supportedLngs: [...APP_LOCALES],
 		load: "currentOnly",
 		resources,

@@ -1,3 +1,7 @@
+> **AICodeRoom development baseline**
+>
+> This branch is the AICodeRoom desktop product fork of Agent Orchestrator. It keeps the upstream execution engine and compatibility boundaries while adding AICodeRoom branding and a simplified-Chinese-first UI. See [`docs/aicoderoom/BASELINE.md`](docs/aicoderoom/BASELINE.md) for the exact fork scope, protected modules, and local development workflow. The upstream project documentation and Apache 2.0 attribution remain below.
+
 <div align="center">
   <img src="assets/ao-logo.svg" alt="Agent Orchestrator" width="160" height="160" />
 

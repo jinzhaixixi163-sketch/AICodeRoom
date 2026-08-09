@@ -1,5 +1,12 @@
 import "@testing-library/jest-dom/vitest";
-import "../i18n";
+import { beforeEach } from "vitest";
+import { appI18n } from "../i18n";
+
+// Most renderer fixtures assert the English source copy. Production still
+// starts in simplified Chinese; locale-specific tests switch explicitly.
+beforeEach(async () => {
+	await appI18n.changeLanguage("en");
+});
 
 // Guard: src/main/** tests run in the Node.js environment (no DOM). vitest still
 // routes setupFiles here, so only install the DOM stubs when a DOM exists.
@@ -56,6 +63,11 @@ if (typeof window !== "undefined") {
 	Element.prototype.scrollIntoView = (() => undefined) as typeof Element.prototype.scrollIntoView;
 
 	window.ao = {
+		account: {
+			getToken: async () => "test-account-token",
+			setToken: async () => undefined,
+			clearToken: async () => undefined,
+		},
 		app: {
 			getVersion: async () => "0.0.0-test",
 			chooseDirectory: async () => null,

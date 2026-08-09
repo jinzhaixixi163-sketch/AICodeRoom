@@ -75,6 +75,11 @@ export type ImportFolderScan = {
 };
 
 const api = {
+	account: {
+		getToken: () => ipcRenderer.invoke("account:getToken") as Promise<string | null>,
+		setToken: (token: string) => ipcRenderer.invoke("account:setToken", token) as Promise<void>,
+		clearToken: () => ipcRenderer.invoke("account:clearToken") as Promise<void>,
+	},
 	app: {
 		getVersion: () => ipcRenderer.invoke("app:getVersion") as Promise<string>,
 		chooseDirectory: (title?: string) => ipcRenderer.invoke("app:chooseDirectory", title) as Promise<string | null>,

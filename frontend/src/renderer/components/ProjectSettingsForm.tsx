@@ -43,6 +43,7 @@ import { SettingsOptionMenu } from "./settings/SettingsOptionMenu";
 import { SettingsRow } from "./settings/SettingsRow";
 import { SettingsSection } from "./settings/SettingsSection";
 import { Button } from "./ui/button";
+import { ProjectBackupSettings } from "./ProjectBackupSettings";
 
 type Project = components["schemas"]["Project"];
 type ProjectConfig = components["schemas"]["ProjectConfig"];
@@ -52,7 +53,7 @@ const PERMISSION_MODE_VALUES = ["default", "accept-edits", "auto", "bypass-permi
 
 const projectQueryKey = (id: string) => ["project", id] as const;
 
-export type ProjectSettingsSection = "general" | "agents" | "workflow" | "intake";
+export type ProjectSettingsSection = "general" | "agents" | "workflow" | "intake" | "backup";
 
 export function ProjectSettingsForm({ projectId, section = "general" }: { projectId: string; section?: ProjectSettingsSection }) {
 	const { t } = useTranslation();
@@ -78,6 +79,12 @@ export function ProjectSettingsForm({ projectId, section = "general" }: { projec
 				<p className="text-sm text-error">
 					{query.error instanceof Error ? query.error.message : t("settings.project.loadFailed")}
 				</p>
+			) : section === "backup" ? (
+				<ProjectBackupSettings
+					projectId={projectId}
+					projectName={query.data.name}
+					repositoryUrl={query.data.repo || undefined}
+				/>
 			) : (
 				<SettingsBody
 					key={projectId}

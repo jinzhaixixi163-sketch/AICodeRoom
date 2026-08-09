@@ -10,6 +10,7 @@ import {
 	nativeImage,
 	Notification as ElectronNotification,
 	protocol,
+	safeStorage,
 	shell,
 	WebContentsView,
 	webContents,
@@ -30,7 +31,13 @@ import {
 import { listFeatureBuilds, getActiveFeatureBuild } from "./main/feature-builds";
 import { readUpdateSettings, type UpdateSettings, type UpdateStatus } from "./main/update-settings";
 import { readKeybindingOverrides, writeKeybindingOverrides } from "./main/keybinding-settings";
-import { coerceUiSettings, readUiSettings, writeUiSettings, type UiSettings } from "./main/ui-settings";
+import {
+	DEFAULT_UI_SETTINGS,
+	coerceUiSettings,
+	readUiSettings,
+	writeUiSettings,
+	type UiSettings,
+} from "./main/ui-settings";
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { closeSync, existsSync, openSync, readFileSync } from "node:fs";
@@ -94,7 +101,7 @@ process.stdout.on("error", ignoreStdStreamError);
 process.stderr.on("error", ignoreStdStreamError);
 
 // Must run before app ready so the About panel and default-menu role labels use it.
-app.setName("Agent Orchestrator");
+app.setName("AICodeRoom");
 
 // Windows shows native toasts only when the app declares an AppUserModelID that
 // matches its installer shortcut (the NSIS maker's appId). Without it,
@@ -172,6 +179,30 @@ const MAC_WINDOW_BUTTON_Y = 12;
 
 const RENDERER_SCHEME = "app";
 const RENDERER_HOST = "renderer";
+const accountTokenPath = () => path.join(app.getPath("userData"), "aicoderoom-account.json");
+
+async function readAccountToken(): Promise<string | null> {
+	try {
+		const payload = JSON.parse(await readFile(accountTokenPath(), "utf8")) as { encryptedToken?: unknown };
+		if (typeof payload.encryptedToken !== "string" || !safeStorage.isEncryptionAvailable()) return null;
+		return safeStorage.decryptString(Buffer.from(payload.encryptedToken, "base64"));
+	} catch {
+		return null;
+	}
+}
+
+async function writeAccountToken(token: string): Promise<void> {
+	if (!safeStorage.isEncryptionAvailable()) throw new Error("System credential encryption is unavailable");
+	if (!token || token.length > 1024) throw new Error("Invalid account token");
+	const target = accountTokenPath();
+	await mkdir(path.dirname(target), { recursive: true });
+	const encryptedToken = safeStorage.encryptString(token).toString("base64");
+	await writeFile(target, `${JSON.stringify({ encryptedToken })}\n`, { encoding: "utf8", mode: 0o600 });
+}
+
+async function clearAccountToken(): Promise<void> {
+	await rm(accountTokenPath(), { force: true });
+}
 const RENDERER_ORIGIN = `${RENDERER_SCHEME}://${RENDERER_HOST}`;
 const NATIVE_WINDOW_BACKGROUND_DARK = "#0f1014";
 const NATIVE_WINDOW_BACKGROUND_LIGHT = "#fbfbfb";
@@ -353,7 +384,7 @@ async function createWindowInternal(): Promise<void> {
 		height: 860,
 		minWidth: 960,
 		minHeight: 640,
-		title: "Agent Orchestrator",
+		title: "AICodeRoom",
 		icon: windowIconPath(),
 		backgroundColor: NATIVE_WINDOW_BACKGROUND_DARK,
 		// Windows goes frameless with a Window Controls Overlay: Electron still draws
@@ -1448,6 +1479,9 @@ ipcMain.handle("daemon:restart", async () => {
 	}
 });
 ipcMain.handle("app:getVersion", () => app.getVersion());
+ipcMain.handle("account:getToken", () => readAccountToken());
+ipcMain.handle("account:setToken", (_event, token: string) => writeAccountToken(token));
+ipcMain.handle("account:clearToken", () => clearAccountToken());
 ipcMain.handle("app:openExternal", async (_event, url: string) => {
 	await openAllowedAppExternalURL(url, shell);
 });
@@ -1542,8 +1576,8 @@ ipcMain.handle("menu:action", (_event, action: string) => {
 		case "help.about":
 			void dialog.showMessageBox(win, {
 				type: "info",
-				title: "About Agent Orchestrator",
-				message: "Agent Orchestrator",
+				title: "About AICodeRoom",
+				message: "AICodeRoom",
 				detail: `Version ${app.getVersion()}`,
 				buttons: ["OK"],
 			});
@@ -1625,7 +1659,7 @@ ipcMain.handle("updateSettings:set", async (_event, settings: UpdateSettings) =>
 
 ipcMain.handle("uiSettings:get", async (): Promise<UiSettings> => {
 	const runFile = runFilePath();
-	if (!runFile) return { locale: "en" };
+	if (!runFile) return { ...DEFAULT_UI_SETTINGS };
 	return readUiSettings(path.dirname(runFile));
 });
 	ipcMain.handle("uiSettings:set", async (_event, settings: UiSettings): Promise<UiSettings> => {
@@ -1784,7 +1818,7 @@ function initAutoUpdates(): void {
 }
 
 // Resolve the bundle path `ao start` will later `open` and stat as a usable app.
-// On macOS process.execPath is .../Agent Orchestrator.app/Contents/MacOS/<exe>;
+// On macOS process.execPath is .../AICodeRoom.app/Contents/MacOS/<exe>;
 // the thing `ao start` opens is the enclosing `.app` directory, so walk up three
 // levels (MacOS -> Contents -> .app). app.getAppPath() is WRONG here: it returns
 // the app.asar archive path inside the bundle, not the bundle itself.
@@ -1871,7 +1905,9 @@ app.whenReady().then(async () => {
 	registerRendererProtocol();
 	applyRuntimeAppIcon();
 	if (isTrayEnabled(process.platform, app.isPackaged, app.getVersion())) {
-		const initialUiSettings = keybindingRunFile ? await readUiSettings(path.dirname(keybindingRunFile)) : { locale: "en" as const };
+		const initialUiSettings = keybindingRunFile
+			? await readUiSettings(path.dirname(keybindingRunFile))
+			: DEFAULT_UI_SETTINGS;
 		trayController = createTrayController({
 			focusWindow: focusMainWindow,
 			openSession: trayLifecycle.openSession,

@@ -39,17 +39,18 @@ describe("coerceLocale", () => {
 		expect(coerceLocale("pt-BR")).toBe("pt-BR");
 	});
 
-	it("defaults unknown values to en", () => {
+	it("defaults unknown values to simplified Chinese", () => {
 		expect(coerceLocale(undefined)).toBe(DEFAULT_LOCALE);
-		expect(coerceLocale(null)).toBe("en");
-		expect(coerceLocale("pt")).toBe("en");
-		expect(coerceLocale({ locale: "zh-CN" })).toBe("en");
+		expect(coerceLocale(null)).toBe("zh-CN");
+		expect(coerceLocale("pt")).toBe("zh-CN");
+		expect(coerceLocale({ locale: "zh-CN" })).toBe("zh-CN");
 	});
 });
 
 describe("app i18next instance", () => {
-	it("uses English by default and Chinese when selected", () => {
-		expect(createAppI18n().t("settings.general")).toBe("General");
+	it("uses simplified Chinese by default and English when selected", () => {
+		expect(createAppI18n().t("settings.general")).toBe("通用");
+		expect(createAppI18n("en").t("settings.general")).toBe("General");
 		expect(createAppI18n("zh-CN").t("settings.general")).toBe("通用");
 		expect(createAppI18n("zh-CN").t("settings.language.zhCN")).toBe("简体中文");
 	});
@@ -117,7 +118,7 @@ describe("app i18next instance", () => {
 		expect(chinese.t("inspector.open")).toBe("打开");
 		expect(chinese.t("inspector.openTerminal")).toBe("打开终端");
 		expect(chinese.t("createProject.gitSetupNotice")).toBe(
-			"如果此文件夹需要设置 Git，AO 会先初始化仓库并创建首次提交，然后再启动。",
+			"如果此文件夹需要设置 Git，AICodeRoom 会先初始化仓库并创建首次提交，然后再启动。",
 		);
 		expect(chinese.t("settings.updates.currentVersion", { version: "v1.2.3" })).toBe("当前版本 - v1.2.3");
 		expect(chinese.t("settings.updates.updateTo", { version: "v1.2.3" })).toBe("更新至 v1.2.3");

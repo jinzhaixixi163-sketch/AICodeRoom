@@ -92,12 +92,12 @@ describe("locale-store", () => {
 		expect(appI18n.language).toBe("zh-CN");
 	});
 
-	it("keeps the English fallback usable when persisted settings cannot be read", async () => {
+	it("uses the simplified Chinese product default when persisted settings cannot be read", async () => {
 		getUiSettings.mockRejectedValue(new Error("IPC unavailable"));
 		await expect(useLocaleStore.getState().load()).resolves.toBeUndefined();
-		expect(useLocaleStore.getState().locale).toBe("en");
+		expect(useLocaleStore.getState().locale).toBe("zh-CN");
 		expect(useLocaleStore.getState().loaded).toBe(true);
-		expect(appI18n.t("settings.general")).toBe("General");
+		expect(appI18n.t("settings.general")).toBe("通用");
 	});
 
 	it("keeps the current locale and exposes an error when persistence fails", async () => {

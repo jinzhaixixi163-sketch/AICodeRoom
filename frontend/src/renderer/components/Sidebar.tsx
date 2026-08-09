@@ -5,6 +5,7 @@ import {
 	ChevronRight,
 	Folder,
 	FolderOpen,
+	LogOut,
 	MoreVertical,
 	Pencil,
 	Pin,
@@ -67,13 +68,14 @@ import {
 } from "./ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { OrchestratorIcon } from "./icons";
-import aoLogo from "../../../assets/ao-logo.svg";
+import aicoderoomLogo from "../../../assets/aicoderoom-logo.svg";
 import { cn } from "../lib/utils";
 import { useUiStore } from "../stores/ui-store"
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CreateProjectFlow, type CreateProjectInput } from "./CreateProjectFlow";
 import { ResizeHandle } from "./ResizeHandle";
 import { isMacPlatform } from "../lib/platform";
+import { useAccountMaybe } from "../lib/account-context";
 
 // macOS paints framed chrome: the fixed TitlebarNav cluster carries the
 // sidebar toggle + history arrows above this surface. Windows hangs the sidebar
@@ -182,6 +184,7 @@ export function Sidebar({
 	const daemonStatus = useShellMaybe()?.daemonStatus ?? null;
 	const commandPaletteEnabled = useCommandPaletteEnabled();
 	const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
+	const account = useAccountMaybe();
 
 	useLayoutEffect(() => {
 		// Offcanvas: the panel slides off-screen on collapse — no need to hide content.
@@ -287,7 +290,7 @@ export function Sidebar({
 								onClick={selection.goHome}
 								type="button"
 							>
-								<img src={aoLogo} alt="" aria-hidden="true" className="h-5.5 w-5.5 -translate-y-[3px] rounded-md object-cover" />
+								<img src={aicoderoomLogo} alt="" aria-hidden="true" className="h-5.5 w-5.5 -translate-y-[3px] rounded-md object-cover" />
 							</button>
 						</TooltipTrigger>
 						<TooltipContent side="right" hidden={state !== "collapsed"}>
@@ -295,7 +298,7 @@ export function Sidebar({
 						</TooltipContent>
 					</Tooltip>
 					<span className="sidebar-expanded-chrome min-w-0 flex-1 truncate text-sm font-bold leading-tight tracking-tight-lg text-foreground group-data-[collapsible=icon]:hidden">
-						Agent Orchestrator
+						AICodeRoom
 					</span>
 					{isNightly && (
 						<span className="sidebar-expanded-chrome shrink-0 rounded-full bg-purple-subtle px-1.5 py-0.5 text-micro font-semibold leading-none text-purple-accent group-data-[collapsible=icon]:hidden">
@@ -412,6 +415,19 @@ export function Sidebar({
 					className="sidebar-expanded-chrome relative flex w-full min-w-46.5 flex-col gap-0.5 transition-[opacity,transform] duration-150 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-2 group-data-[collapsible=icon]:opacity-0"
 				>
 					<RestartToUpdateRow status={updateStatus} tabIndex={isCollapsed ? -1 : 0} />
+					{account ? (
+						<button
+							aria-label={t("account.signOut")}
+							className={cn(NAV_ROW_CLASS, "flex h-9 w-full items-center text-left [&_svg]:size-icon-md")}
+							onClick={() => void account.signOut()}
+							tabIndex={isCollapsed ? -1 : 0}
+							title={t("account.signOut")}
+							type="button"
+						>
+							<LogOut aria-hidden="true" />
+							<span className="min-w-0 flex-1 truncate">{account.user.displayName}</span>
+						</button>
+					) : null}
 					<button
 						aria-label={t("shell.settings")}
 						className={cn(

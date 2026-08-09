@@ -31,7 +31,7 @@ const config: ForgeConfig = {
 	packagerConfig: {
 		asar: true,
 		appBundleId: "dev.agent-orchestrator.desktop",
-		name: "Agent Orchestrator",
+		name: "AICodeRoom",
 		executableName: EXECUTABLE_NAME,
 		appCategoryType: "public.app-category.developer-tools",
 		// App icon. electron-packager appends the per-platform extension
@@ -124,9 +124,9 @@ const config: ForgeConfig = {
 		new MakerNSIS(
 			{
 				appId: "dev.agent-orchestrator.desktop",
-				productName: "Agent Orchestrator",
+				productName: "AICodeRoom",
 				// Match the packaged binary name so the Start menu shortcut targets
-				// the real "agent-orchestrator.exe" (not "Agent Orchestrator.exe").
+				// the real "agent-orchestrator.exe" (not "AICodeRoom.exe").
 				executableName: EXECUTABLE_NAME,
 				icon: "assets/icon.ico",
 			},
@@ -143,7 +143,7 @@ const config: ForgeConfig = {
 		new MakerDMG(
 			{
 				appId: "dev.agent-orchestrator.desktop",
-				productName: "Agent Orchestrator",
+				productName: "AICodeRoom",
 			},
 			["darwin"],
 		),
@@ -154,7 +154,7 @@ const config: ForgeConfig = {
 		new MakerAppImage(
 			{
 				appId: "dev.agent-orchestrator.desktop",
-				productName: "Agent Orchestrator",
+				productName: "AICodeRoom",
 				icon: "assets/icon.png",
 			},
 			["linux"],
@@ -168,7 +168,7 @@ const config: ForgeConfig = {
 					// the Electron app binary". (Both are "agent-orchestrator".)
 					bin: EXECUTABLE_NAME,
 					icon: "assets/icon.png",
-					maintainer: "Agent Orchestrator",
+					maintainer: "AICodeRoom",
 					homepage: "https://github.com/aoagents/agent-orchestrator",
 				},
 			},

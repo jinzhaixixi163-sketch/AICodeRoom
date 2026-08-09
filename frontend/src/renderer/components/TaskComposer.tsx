@@ -28,12 +28,14 @@ import {
 } from "../hooks/useAgentModelsQuery";
 import { AgentModelCombobox } from "./settings/AgentModelCombobox";
 import { SettingsOptionMenu } from "./settings/SettingsOptionMenu";
+import { createControlPlaneTask, updateControlPlaneTask } from "../lib/control-plane-client";
 
 type Project = components["schemas"]["Project"];
 type DelegateAgent = components["schemas"]["DelegateTaskRequest"]["agent"];
 
 type CreateTaskInput = {
 	projectId: string;
+	projectName: string;
 	brief: string;
 	agent?: DelegateAgent;
 	model?: string;
@@ -101,7 +103,14 @@ export function TaskComposer({
 	const createTask = useCallback(
 		async (input: CreateTaskInput): Promise<string> => {
 			void captureRendererEvent("ao.renderer.task_create_requested", { project_id: input.projectId });
+			let controlPlaneTaskId: string | undefined;
 			try {
+				controlPlaneTaskId = await createControlPlaneTask({
+					clientProjectId: input.projectId,
+					projectName: input.projectName,
+					title: input.brief.trim().split("\n", 1)[0]?.slice(0, 200) || t("newTask.title"),
+					description: input.brief,
+				});
 				const { data, error } = await apiClient.POST("/api/v1/orchestrators/delegate", {
 					body: {
 						projectId: input.projectId,
@@ -119,9 +128,16 @@ export function TaskComposer({
 					);
 				}
 				if (!data?.workerId) throw new Error(t("newTask.noSession"));
+				await updateControlPlaneTask(controlPlaneTaskId, { status: "queued", aoSessionId: data.workerId });
 				void captureRendererEvent("ao.renderer.task_create_succeeded", { project_id: input.projectId });
 				return data.workerId;
 			} catch (err) {
+				if (controlPlaneTaskId) {
+					await updateControlPlaneTask(controlPlaneTaskId, {
+						status: "failed",
+						resultSummary: err instanceof Error ? err.message : t("newTask.unableToStart"),
+					}).catch(() => undefined);
+				}
 				void captureRendererEvent("ao.renderer.task_create_failed", { project_id: input.projectId });
 				void queryClient.invalidateQueries({ queryKey: agentsQueryKey });
 				throw err instanceof Error ? err : new Error(t("newTask.unableToStart"));
@@ -220,6 +236,7 @@ export function TaskComposer({
 			const attachmentPayloads = await toSettledPayload();
 			const sessionId = await createTask({
 				projectId,
+				projectName: projectQuery.data?.name || projectId,
 				brief: prompt,
 				// The visible selection is authoritative: it is either the user's pick
 				// or the resolved default, so spawning names it explicitly.

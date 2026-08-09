@@ -36,11 +36,11 @@ describe("ui-settings", () => {
 		expect(await readUiSettings(dir)).toEqual(DEFAULT_UI_SETTINGS);
 	});
 
-	it("coerces unknown locale to en and accepts supported locales", () => {
-		expect(coerceUiSettings({ locale: "xx" })).toEqual({ locale: "en" });
-		expect(coerceUiSettings({ locale: "zh" })).toEqual({ locale: "en" });
-		expect(coerceUiSettings({})).toEqual({ locale: "en" });
-		expect(coerceUiSettings(null)).toEqual({ locale: "en" });
+	it("coerces unknown locale to the AICodeRoom default and accepts supported locales", () => {
+		expect(coerceUiSettings({ locale: "xx" })).toEqual(DEFAULT_UI_SETTINGS);
+		expect(coerceUiSettings({ locale: "zh" })).toEqual(DEFAULT_UI_SETTINGS);
+		expect(coerceUiSettings({})).toEqual(DEFAULT_UI_SETTINGS);
+		expect(coerceUiSettings(null)).toEqual(DEFAULT_UI_SETTINGS);
 		expect(coerceUiSettings({ locale: "zh-CN" })).toEqual({ locale: "zh-CN" });
 		expect(coerceUiSettings({ locale: "fr" })).toEqual({ locale: "fr" });
 		expect(coerceUiSettings({ locale: "pt-BR" })).toEqual({ locale: "pt-BR" });

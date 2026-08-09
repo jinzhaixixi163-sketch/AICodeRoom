@@ -19,7 +19,7 @@ export type MakerNSISConfig = {
 	// The packaged binary name WITHOUT ".exe" — must match Forge's
 	// packagerConfig.executableName ("agent-orchestrator"). electron-builder
 	// otherwise derives the exe name from productName and points the Start menu
-	// shortcut at "Agent Orchestrator.exe", which does not exist, so the app
+	// shortcut at "AICodeRoom.exe", which does not exist, so the app
 	// silently fails to launch and the shortcut shows a generic icon (#2414).
 	executableName?: string;
 	// Path to the Windows .ico used for the app and installer.
@@ -47,7 +47,7 @@ export default class MakerNSIS extends MakerBase<MakerNSISConfig> {
 		// to productName when it is unset. Forge's packager already named the binary
 		// "agent-orchestrator.exe" (packagerConfig.executableName), so we forward the
 		// same name here; otherwise the shortcut targets a nonexistent
-		// "Agent Orchestrator.exe" and the app never launches (#2414).
+		// "AICodeRoom.exe" and the app never launches (#2414).
 		const win: Record<string, unknown> = {};
 		if (cfg.icon) win.icon = cfg.icon;
 		if (cfg.executableName) win.executableName = cfg.executableName;

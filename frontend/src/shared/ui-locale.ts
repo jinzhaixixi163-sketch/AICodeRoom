@@ -3,7 +3,7 @@ export const APP_LOCALES = ["en", "zh-CN", "ja", "ko", "es", "fr", "de", "pt-BR"
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
-export const DEFAULT_LOCALE: AppLocale = "en";
+export const DEFAULT_LOCALE: AppLocale = "zh-CN";
 
 export interface UiSettings {
 	locale: AppLocale;

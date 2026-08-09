@@ -2,16 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 
 // Capture buildForge's args without pulling in electron-builder's real machinery.
 const buildForge = vi.fn<(forge: { dir: string }, options: any) => Promise<string[]>>(async () => [
-	"/out/make/Agent Orchestrator Setup.exe",
+	"/out/make/AICodeRoom Setup.exe",
 ]);
 vi.mock("app-builder-lib", () => ({ buildForge }));
 
 import MakerNSIS from "./maker-nsis";
 
 const makeOptions = {
-	dir: "/tmp/app/Agent Orchestrator-win32-x64",
+	dir: "/tmp/app/AICodeRoom-win32-x64",
 	makeDir: "/tmp/app/make",
-	appName: "Agent Orchestrator",
+	appName: "AICodeRoom",
 	targetPlatform: "win32" as const,
 	targetArch: "x64" as const,
 	forgeConfig: {} as never,
@@ -32,7 +32,7 @@ describe("MakerNSIS", () => {
 		await maker.prepareConfig(makeOptions.targetArch);
 		const artifacts = await maker.make(makeOptions);
 
-		expect(artifacts).toEqual(["/out/make/Agent Orchestrator Setup.exe"]);
+		expect(artifacts).toEqual(["/out/make/AICodeRoom Setup.exe"]);
 		const [forgeOptions, options] = buildForge.mock.calls[0];
 		expect(forgeOptions).toEqual({ dir: makeOptions.dir });
 		expect(options.win).toEqual(["nsis:x64"]);
@@ -40,7 +40,7 @@ describe("MakerNSIS", () => {
 		expect(options.config.publish).toBeNull();
 		expect(options.config.appId).toBe("dev.agent-orchestrator.desktop");
 		// productName falls back to appName when not set on the maker config.
-		expect(options.config.productName).toBe("Agent Orchestrator");
+		expect(options.config.productName).toBe("AICodeRoom");
 		expect(options.config.win).toEqual({ icon: "assets/icon.ico" });
 		// A real installer: not Squirrel's silent one-click per-user drop.
 		expect(options.config.nsis.oneClick).toBe(false);
@@ -59,7 +59,7 @@ describe("MakerNSIS", () => {
 		// electron-builder derives the exe name — and thus the shortcut's TargetPath
 		// and icon — from win.executableName, falling back to productName otherwise.
 		// It must match Forge's packaged "agent-orchestrator.exe", not the
-		// "Agent Orchestrator.exe" it would infer from productName.
+		// "AICodeRoom.exe" it would infer from productName.
 		expect(options.config.win.executableName).toBe("agent-orchestrator");
 		expect(options.config.win.icon).toBe("assets/icon.ico");
 	});

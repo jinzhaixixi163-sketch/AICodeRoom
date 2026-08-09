@@ -5,6 +5,11 @@ export type { FeatureBuild } from "../../main/feature-builds";
 export const aoBridge: AoBridge =
 	window.ao ??
 	({
+		account: {
+			getToken: async () => window.sessionStorage.getItem("aicoderoom.preview.token"),
+			setToken: async (token: string) => window.sessionStorage.setItem("aicoderoom.preview.token", token),
+			clearToken: async () => window.sessionStorage.removeItem("aicoderoom.preview.token"),
+		},
 		app: {
 			getVersion: async () => "0.0.0-preview",
 			chooseDirectory: async () => null,
