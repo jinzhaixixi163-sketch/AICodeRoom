@@ -210,6 +210,252 @@ paths:
       summary: Refresh the cached local agent adapter catalog
       tags:
       - agents
+  /api/v1/ai-accounts:
+    get:
+      operationId: listAIAccounts
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllersListAIAccountsResponse'
+          description: OK
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Implemented
+      summary: List isolated Codex and Claude account profiles
+      tags:
+      - settings
+    post:
+      operationId: createAIAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ControllersCreateAIAccountRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllersAIAccountResponse'
+          description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Bad Request
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Conflict
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+      summary: Create an isolated AI account profile
+      tags:
+      - settings
+  /api/v1/ai-accounts/{id}:
+    delete:
+      operationId: deleteAIAccount
+      parameters:
+      - description: AI account profile id.
+        in: path
+        name: id
+        required: true
+        schema:
+          description: AI account profile id.
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+      summary: Remove an AI account profile without deleting provider credentials
+      tags:
+      - settings
+    patch:
+      operationId: updateAIAccount
+      parameters:
+      - description: AI account profile id.
+        in: path
+        name: id
+        required: true
+        schema:
+          description: AI account profile id.
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ControllersUpdateAIAccountRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllersAIAccountResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+      summary: Update an AI account profile
+      tags:
+      - settings
+  /api/v1/ai-accounts/{id}/credential:
+    delete:
+      operationId: clearAIAccountCredential
+      parameters:
+      - description: AI account profile id.
+        in: path
+        name: id
+        required: true
+        schema:
+          description: AI account profile id.
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+      summary: Clear only the selected AI account login credential
+      tags:
+      - settings
+    put:
+      operationId: setAIAccountCredential
+      parameters:
+      - description: AI account profile id.
+        in: path
+        name: id
+        required: true
+        schema:
+          description: AI account profile id.
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ControllersSetAIAccountCredentialRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllersAIAccountResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+      summary: Store a Claude profile token in the operating system credential vault
+      tags:
+      - settings
+  /api/v1/ai-accounts/{id}/login:
+    post:
+      operationId: loginAIAccount
+      parameters:
+      - description: AI account profile id.
+        in: path
+        name: id
+        required: true
+        schema:
+          description: AI account profile id.
+          type: string
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllersAIAccountResponse'
+          description: Accepted
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Not Found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Conflict
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: Internal Server Error
+      summary: Start the provider-owned OAuth login for an isolated profile
+      tags:
+      - settings
   /api/v1/browser/commands:
     post:
       operationId: executeBrowserCommand
@@ -4364,6 +4610,43 @@ components:
       - fetchedAt
       - stale
       type: object
+    AiaccountProfile:
+      properties:
+        authMethod:
+          type: string
+        authStatus:
+          enum:
+          - authenticated
+          - signed_out
+          - unavailable
+          - authenticating
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        credentialConfigured:
+          type: boolean
+        enabled:
+          type: boolean
+        harness:
+          type: string
+        id:
+          type: string
+        label:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+      - id
+      - harness
+      - label
+      - enabled
+      - authStatus
+      - credentialConfigured
+      - createdAt
+      - updatedAt
+      type: object
     BrowserCommandRequest:
       properties:
         action:
@@ -4521,8 +4804,39 @@ components:
         disabled:
           type: boolean
       type: object
+    ControllersAIAccountResponse:
+      properties:
+        account:
+          $ref: '#/components/schemas/AiaccountProfile'
+      required:
+      - account
+      type: object
+    ControllersCreateAIAccountRequest:
+      properties:
+        harness:
+          enum:
+          - codex
+          - claude-code
+          type: string
+        label:
+          maxLength: 40
+          type: string
+      required:
+      - harness
+      type: object
+    ControllersListAIAccountsResponse:
+      properties:
+        accounts:
+          items:
+            $ref: '#/components/schemas/AiaccountProfile'
+          type: array
+      required:
+      - accounts
+      type: object
     ControllersSessionView:
       properties:
+        accountProfileId:
+          type: string
         activity:
           $ref: '#/components/schemas/DomainActivity'
         branch:
@@ -4642,6 +4956,15 @@ components:
       - status
       - prs
       type: object
+    ControllersSetAIAccountCredentialRequest:
+      properties:
+        token:
+          maxLength: 3000
+          minLength: 1
+          type: string
+      required:
+      - token
+      type: object
     ControllersSpawnAttachmentInput:
       properties:
         data:
@@ -4650,6 +4973,18 @@ components:
           type: string
       required:
       - data
+      type: object
+    ControllersUpdateAIAccountRequest:
+      properties:
+        enabled:
+          type:
+          - "null"
+          - boolean
+        label:
+          maxLength: 40
+          type:
+          - "null"
+          - string
       type: object
     ConversationAccountPayload:
       properties:
@@ -5233,6 +5568,8 @@ components:
       type: object
     DelegateTaskRequest:
       properties:
+        accountProfileId:
+          type: string
         agent:
           enum:
           - claude-code
@@ -6914,6 +7251,8 @@ components:
       type: object
     SpawnSessionRequest:
       properties:
+        accountProfileId:
+          type: string
         attachments:
           items:
             $ref: '#/components/schemas/ControllersSpawnAttachmentInput'

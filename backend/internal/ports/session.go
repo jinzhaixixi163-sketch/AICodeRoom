@@ -14,6 +14,9 @@ var ErrSessionNotFound = errors.New("session not found")
 type SpawnConfig struct {
 	ProjectID domain.ProjectID
 	IssueID   domain.IssueID
+	// AccountProfileID selects one isolated Codex/Claude login. Empty keeps the
+	// legacy provider-default credential store.
+	AccountProfileID domain.AccountProfileID
 	// IssueContext is optional pre-fetched tracker context for the task prompt.
 	// Standing rules stay in SystemPrompt; issue facts belong to the user task.
 	IssueContext string

@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 
 // Default GitHub release target (production). aoagents was the temporary rewrite
 // home; releases land on AgentWrapper (spec §1.1).
-const DEFAULT_RELEASE_REPO = "AgentWrapper/agent-orchestrator";
+const DEFAULT_RELEASE_REPO = "jinzhaixixi163-sketch/AICodeRoom";
 
 // The packaged binary name (no extension). Single source of truth: the packager
 // names the exe/ELF from this, and the NSIS + deb makers must point their
@@ -169,7 +169,7 @@ const config: ForgeConfig = {
 					bin: EXECUTABLE_NAME,
 					icon: "assets/icon.png",
 					maintainer: "AICodeRoom",
-					homepage: "https://github.com/aoagents/agent-orchestrator",
+				homepage: "https://github.com/jinzhaixixi163-sketch/AICodeRoom",
 				},
 			},
 		},
@@ -180,7 +180,7 @@ const config: ForgeConfig = {
 					icon: "assets/icon.png",
 					// rpmbuild rejects a spec with an empty License field.
 					license: "MIT",
-					homepage: "https://github.com/aoagents/agent-orchestrator",
+				homepage: "https://github.com/jinzhaixixi163-sketch/AICodeRoom",
 				},
 			},
 		},

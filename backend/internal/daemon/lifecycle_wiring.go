@@ -141,7 +141,7 @@ type sessionLifecycle interface {
 // LCM, the per-session agent resolver, and the agent messenger. The returned
 // service is mounted at httpd APIDeps.Sessions. It also returns the manager so
 // the caller can wire Reconcile into the boot sequence.
-func startSession(ctx context.Context, cfg config.Config, runtime runtimeselect.Runtime, store *sqlite.Store, lcm *lifecycle.Manager, messenger ports.AgentMessenger, telemetry ports.EventSink, agents ports.AgentResolver, previewLifecycle sessionmanager.PreviewLifecycle, browserLifecycle sessionmanager.BrowserLifecycle, browserCapabilities sessionmanager.BrowserCapabilityIssuer, chat sessionmanager.ChatLauncher, defaults sessionmanager.SessionModeDefaults, log *slog.Logger) (*sessionsvc.Service, reviewsvc.Manager, sessionLifecycle, error) {
+func startSession(ctx context.Context, cfg config.Config, runtime runtimeselect.Runtime, store *sqlite.Store, lcm *lifecycle.Manager, messenger ports.AgentMessenger, telemetry ports.EventSink, agents ports.AgentResolver, previewLifecycle sessionmanager.PreviewLifecycle, browserLifecycle sessionmanager.BrowserLifecycle, browserCapabilities sessionmanager.BrowserCapabilityIssuer, chat sessionmanager.ChatLauncher, defaults sessionmanager.SessionModeDefaults, accounts sessionmanager.AccountProfileResolver, log *slog.Logger) (*sessionsvc.Service, reviewsvc.Manager, sessionLifecycle, error) {
 	gitWS, err := gitworktree.New(gitworktree.Options{
 		// Per-session worktrees live under the data dir, so a single AO_DATA_DIR
 		// override moves all durable per-user state together.
@@ -170,6 +170,7 @@ func startSession(ctx context.Context, cfg config.Config, runtime runtimeselect.
 		Agents:              agents,
 		Workspace:           ws,
 		Store:               store,
+		Accounts:            accounts,
 		Messenger:           messenger,
 		Chat:                chat,
 		Defaults:            defaults,
@@ -423,8 +424,8 @@ var _ interface {
 	AbortChatHandoff(domain.SessionID)
 } = chatLauncher{}
 
-func (c chatLauncher) PreflightChat(ctx context.Context, harness domain.AgentHarness) error {
-	return c.svc.PreflightChat(ctx, harness)
+func (c chatLauncher) PreflightChat(ctx context.Context, harness domain.AgentHarness, env map[string]string) error {
+	return c.svc.PreflightChat(ctx, harness, env)
 }
 
 func (c chatLauncher) StartChat(ctx context.Context, cfg sessionmanager.ChatStart) (sessionmanager.ChatStarted, error) {

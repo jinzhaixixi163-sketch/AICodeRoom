@@ -27,6 +27,7 @@ type DelegateTaskInput struct {
 	ProjectID      domain.ProjectID
 	Brief          string
 	RequestedAgent domain.AgentHarness
+	AccountProfileID domain.AccountProfileID
 	Model          string
 	RequestedMode  domain.SessionMode
 	Attachments    []ports.SpawnAttachment
@@ -63,6 +64,7 @@ func (s *Service) DelegateTask(ctx context.Context, in DelegateTaskInput) (Deleg
 		ProjectID:     in.ProjectID,
 		Kind:          domain.KindWorker,
 		Harness:       in.RequestedAgent,
+		AccountProfileID: in.AccountProfileID,
 		Prompt:        prompt,
 		DisplayName:   delegatedTaskDisplayName(in.Brief),
 		AgentConfig:   ports.AgentConfig{Model: strings.TrimSpace(in.Model)},

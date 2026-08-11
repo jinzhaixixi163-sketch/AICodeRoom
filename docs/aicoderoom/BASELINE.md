@@ -8,9 +8,9 @@
 - 上游基线：`upstream/main`，提交 `d293ea81f9e3415b18fd9f62353e6335b947c854`
 - 二开分支：`aicoderoom/main`
 - 上游远程名：`upstream`
-- 自有远程：尚未配置；取得 AICodeRoom 仓库地址后再添加为 `origin`
+- 自有远程：`git@github.com:jinzhaixixi163-sketch/AICodeRoom.git`（`origin`）
 - 许可证：根目录 `LICENSE` 保持 Apache License 2.0 原文；分发衍生版本时继续保留上游版权、专利、商标和归属要求
-- 用户已有内容：克隆前存在的根目录 `index.html` 原样保留，作为 AICodeRoom 品牌落地页素材纳入本分支
+- 用户已有内容：克隆前存在的根目录 `index.html` 原样保留在本机；其中含私人联系邮箱，开源发布时不自动纳入提交
 
 ## 当前架构结论
 
@@ -52,7 +52,8 @@ SQLite + change_log CDC
 | 扩展 | 桌面端可见图标 | 使用 AICodeRoom 临时 SVG 标识 | 与已有品牌落地页的深色房间、暖色灯光语义保持一致 |
 | 新建 | `docs/aicoderoom/` | 二开决策、审计和阶段记录 | 把 AICodeRoom 产品决策与上游架构文档分开 |
 | 新建 | `server/` AICodeRoom Server | 独立控制面 | 用户、项目成员和任务记录不进入本地 daemon 核心 |
-| 扩展 | 账号/项目/任务桌面接入 | 真实 API + PostgreSQL | 不使用 Mock；本地 AO 项目和会话以稳定 ID 关联控制面记录 |
+| 扩展 | 账号/项目/任务桌面接入 | 本地优先；云端控制面显式启用 | 开源桌面端不要求 AICodeRoom 账号；设置 `VITE_AICODEROOM_API_URL` 后才连接独立控制面 |
+| 扩展 | `backend/internal/service/aiaccount` | GPT/Codex 与 Claude 独立账号档案 | 每个新任务在桌面端显式绑定档案；不把提供商凭证写入项目或 SQLite |
 
 ## 第一阶段已限定的代码范围
 
@@ -98,12 +99,11 @@ go test ./...
 
 根目录 `npm run lint` 会执行完整 Go 测试和固定版本的 golangci-lint；`npm run frontend:typecheck` 可从根目录执行前端类型检查。
 
-真实账号、项目、任务控制面的边界、启动方式和当前能力见 [`CONTROL-PLANE.md`](./CONTROL-PLANE.md)。
+独立模型账号的实现与边界见 [`ACCOUNT-ISOLATION.md`](./ACCOUNT-ISOLATION.md)。可选的账号、项目、任务控制面边界见 [`CONTROL-PLANE.md`](./CONTROL-PLANE.md)。
 
 ## 下一阶段前置条件
 
-1. 确认 AICodeRoom 自有 Git 仓库地址，并配置为 `origin`。
-2. 设计正式品牌资产，替换临时 SVG 以及 `.png/.icns/.ico` 安装图标。
-3. 在现有 AICodeRoom Server 边界继续实现邀请、文件存储、结果归档和安全部署审批。
-4. 本地跑通“导入项目 -> 启动 Claude/Codex -> 创建 worktree -> 结束/恢复会话”的上游闭环后，再接入账号与云端协作。
-5. 首个多人闭环完成后尽早部署 staging；开发仍在本地进行，不直接在服务器修改源码。
+1. 设计正式品牌资产，替换临时 SVG 以及 `.png/.icns/.ico` 安装图标。
+2. 在现有 AICodeRoom Server 边界继续实现邀请、文件存储、结果归档和安全部署审批。
+3. 本地跑通“导入项目 -> 选择独立账号 -> 启动 Claude/Codex -> 创建 worktree -> 结束/恢复会话”的闭环。
+4. 首个多人闭环完成后尽早部署 staging；开发仍在本地进行，不直接在服务器修改源码。

@@ -5,7 +5,6 @@ import {
 	ChevronRight,
 	Folder,
 	FolderOpen,
-	LogOut,
 	MoreVertical,
 	Pencil,
 	Pin,
@@ -75,7 +74,6 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { CreateProjectFlow, type CreateProjectInput } from "./CreateProjectFlow";
 import { ResizeHandle } from "./ResizeHandle";
 import { isMacPlatform } from "../lib/platform";
-import { useAccountMaybe } from "../lib/account-context";
 
 // macOS paints framed chrome: the fixed TitlebarNav cluster carries the
 // sidebar toggle + history arrows above this surface. Windows hangs the sidebar
@@ -184,7 +182,6 @@ export function Sidebar({
 	const daemonStatus = useShellMaybe()?.daemonStatus ?? null;
 	const commandPaletteEnabled = useCommandPaletteEnabled();
 	const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
-	const account = useAccountMaybe();
 
 	useLayoutEffect(() => {
 		// Offcanvas: the panel slides off-screen on collapse — no need to hide content.
@@ -415,19 +412,6 @@ export function Sidebar({
 					className="sidebar-expanded-chrome relative flex w-full min-w-46.5 flex-col gap-0.5 transition-[opacity,transform] duration-150 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-2 group-data-[collapsible=icon]:opacity-0"
 				>
 					<RestartToUpdateRow status={updateStatus} tabIndex={isCollapsed ? -1 : 0} />
-					{account ? (
-						<button
-							aria-label={t("account.signOut")}
-							className={cn(NAV_ROW_CLASS, "flex h-9 w-full items-center text-left [&_svg]:size-icon-md")}
-							onClick={() => void account.signOut()}
-							tabIndex={isCollapsed ? -1 : 0}
-							title={t("account.signOut")}
-							type="button"
-						>
-							<LogOut aria-hidden="true" />
-							<span className="min-w-0 flex-1 truncate">{account.user.displayName}</span>
-						</button>
-					) : null}
 					<button
 						aria-label={t("shell.settings")}
 						className={cn(

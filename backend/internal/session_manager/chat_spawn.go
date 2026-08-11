@@ -26,7 +26,7 @@ type ChatLauncher interface {
 	// PreflightChat reports whether a harness can start in chat mode right now.
 	// Called before any durable state exists so an unsupported request costs
 	// nothing.
-	PreflightChat(ctx context.Context, harness domain.AgentHarness) error
+	PreflightChat(ctx context.Context, harness domain.AgentHarness, env map[string]string) error
 	// StartChat launches the controller and returns the provider conversation
 	// handle to persist for resume. Implementations must call ControllerReady
 	// after the provider and generation exist but before consuming live events.
@@ -94,6 +94,7 @@ type chatSpawn struct {
 	workspaceProject *ports.WorkspaceProjectInfo
 	prompt           string
 	systemPrompt     string
+	accountEnv       map[string]string
 }
 
 // launchChatController starts the provider controller for a chat session and
@@ -110,6 +111,7 @@ func (m *Manager) launchChatController(ctx context.Context, in chatSpawn) (domai
 	// provider passes its environment through to the shell commands it runs, so
 	// this is what makes `ao` resolvable to the agent.
 	env := m.runtimeEnv(id, in.cfg.ProjectID, in.cfg.IssueID, in.project.Config.Env)
+	applyEnvOverrides(env, in.accountEnv)
 	var diffBaseSHA, diffBaseRef string
 	if in.projectKind == domain.ProjectKindSingleRepo {
 		diffBaseSHA, diffBaseRef = resolveSpawnDiffBase(
@@ -134,6 +136,7 @@ func (m *Manager) launchChatController(ctx context.Context, in chatSpawn) (domai
 		AdditionalDirectories: workspaceProjectDirectories(in.workspace.Path, in.workspaceProject),
 		ControllerReady: func(started ChatStarted) error {
 			metadata := domain.SessionMetadata{
+				AccountProfileID:  in.cfg.AccountProfileID,
 				Branch:            in.workspace.Branch,
 				WorkspacePath:     in.workspace.Path,
 				WorkspaceRepoPath: in.workspace.RepoPath,
@@ -282,11 +285,17 @@ func (m *Manager) resumeChatController(
 	}
 
 	agentConfig := effectiveAgentConfig(rec.Kind, project.Config)
+	accountEnv, err := m.resolveAccountProfile(ctx, rec.Metadata.AccountProfileID, rec.Harness)
+	if err != nil {
+		return RestoreResult{}, fmt.Errorf("%s %s: account profile: %w", operation, rec.ID, err)
+	}
 	additionalDirectories, err := m.restoredWorkspaceProjectDirectories(ctx, rec, project, ws.Path)
 	if err != nil {
 		return RestoreResult{}, fmt.Errorf("%s %s: workspace roots: %w", operation, rec.ID, err)
 	}
 	var completionErr error
+	env := m.runtimeEnv(rec.ID, rec.ProjectID, rec.IssueID, project.Config.Env)
+	applyEnvOverrides(env, accountEnv)
 	_, err = m.chat.StartChat(ctx, ChatStart{
 		SessionID:             rec.ID,
 		ProjectID:             rec.ProjectID,
@@ -294,7 +303,7 @@ func (m *Manager) resumeChatController(
 		Harness:               rec.Harness,
 		DataDir:               m.dataDir,
 		WorkspacePath:         ws.Path,
-		Env:                   m.runtimeEnv(rec.ID, rec.ProjectID, rec.IssueID, project.Config.Env),
+		Env:                   env,
 		Model:                 agentConfig.Model,
 		Permissions:           agentConfig.Permissions,
 		SystemPrompt:          systemPrompt,

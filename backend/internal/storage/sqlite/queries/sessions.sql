@@ -8,13 +8,13 @@ INSERT INTO sessions (
     branch, workspace_path, workspace_repo_path, diff_base_sha, diff_base_ref, runtime_handle_id,
     runtime_launch_id, agent_session_id, prompt,
     preview_url, preview_revision, terminate_on_pr_merge, cleanup_generation, browser_capability_verifier,
-    session_mode, provider_conversation_id, controller_generation,
+    session_mode, provider_conversation_id, controller_generation, account_profile_id,
     created_at, updated_at, is_pinned, pinned_at
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-    ?, ?, ?
+    ?, ?, ?, ?
 );
 
 -- name: UpdateSession :exec
@@ -25,7 +25,7 @@ UPDATE sessions SET
     runtime_launch_id = ?, agent_session_id = ?, prompt = ?,
     preview_url = ?, preview_revision = ?, terminate_on_pr_merge = ?,
     cleanup_generation = ?, browser_capability_verifier = ?,
-    provider_conversation_id = ?, controller_generation = ?, updated_at = ?,
+    provider_conversation_id = ?, controller_generation = ?, account_profile_id = ?, updated_at = ?,
     is_pinned = ?, pinned_at = ?
 WHERE id = ?;
 
@@ -62,7 +62,7 @@ SELECT id, project_id, num, issue_id, kind, harness,
     preview_revision, cleanup_generation, runtime_launch_id,
     workspace_repo_path, terminate_on_pr_merge, diff_base_sha, diff_base_ref,
     reviewer_harness, is_pinned, pinned_at, session_mode,
-    provider_conversation_id, controller_generation, browser_capability_verifier
+    provider_conversation_id, controller_generation, browser_capability_verifier, account_profile_id
 FROM sessions WHERE id = ?;
 
 -- name: ListSessionsByProject :many
@@ -73,7 +73,7 @@ SELECT id, project_id, num, issue_id, kind, harness,
     preview_revision, cleanup_generation, runtime_launch_id,
     workspace_repo_path, terminate_on_pr_merge, diff_base_sha, diff_base_ref,
     reviewer_harness, is_pinned, pinned_at, session_mode,
-    provider_conversation_id, controller_generation, browser_capability_verifier
+    provider_conversation_id, controller_generation, browser_capability_verifier, account_profile_id
 FROM sessions WHERE project_id = ? ORDER BY num;
 
 -- name: ListAllSessions :many
@@ -84,7 +84,7 @@ SELECT id, project_id, num, issue_id, kind, harness,
     preview_revision, cleanup_generation, runtime_launch_id,
     workspace_repo_path, terminate_on_pr_merge, diff_base_sha, diff_base_ref,
     reviewer_harness, is_pinned, pinned_at, session_mode,
-    provider_conversation_id, controller_generation, browser_capability_verifier
+    provider_conversation_id, controller_generation, browser_capability_verifier, account_profile_id
 FROM sessions ORDER BY project_id, num;
 
 

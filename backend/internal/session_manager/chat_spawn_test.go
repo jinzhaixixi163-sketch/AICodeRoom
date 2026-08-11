@@ -52,7 +52,7 @@ type recordingLauncher struct {
 	stopped []domain.SessionID
 }
 
-func (l *recordingLauncher) PreflightChat(_ context.Context, harness domain.AgentHarness) error {
+func (l *recordingLauncher) PreflightChat(_ context.Context, harness domain.AgentHarness, _ map[string]string) error {
 	l.preflighted = append(l.preflighted, harness)
 	return l.preflightErr
 }

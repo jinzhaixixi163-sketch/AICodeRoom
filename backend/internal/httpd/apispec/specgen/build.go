@@ -506,6 +506,81 @@ func usageOperations() []operation {
 func shellTerminalOperations() []operation {
 	return []operation{
 		{
+			method: http.MethodGet, path: "/api/v1/ai-accounts", id: "listAIAccounts", tag: "settings",
+			summary: "List isolated Codex and Claude account profiles",
+			resps: []respUnit{
+				{http.StatusOK, controllers.ListAIAccountsResponse{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+				{http.StatusNotImplemented, envelope.APIError{}},
+			},
+		},
+		{
+			method: http.MethodPost, path: "/api/v1/ai-accounts", id: "createAIAccount", tag: "settings",
+			summary: "Create an isolated AI account profile",
+			reqBody: controllers.CreateAIAccountRequest{},
+			resps: []respUnit{
+				{http.StatusCreated, controllers.AIAccountResponse{}},
+				{http.StatusBadRequest, envelope.APIError{}},
+				{http.StatusConflict, envelope.APIError{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+			},
+		},
+		{
+			method: http.MethodPatch, path: "/api/v1/ai-accounts/{id}", id: "updateAIAccount", tag: "settings",
+			summary:    "Update an AI account profile",
+			pathParams: []any{controllers.AIAccountIDParam{}},
+			reqBody:    controllers.UpdateAIAccountRequest{},
+			resps: []respUnit{
+				{http.StatusOK, controllers.AIAccountResponse{}},
+				{http.StatusBadRequest, envelope.APIError{}},
+				{http.StatusNotFound, envelope.APIError{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+			},
+		},
+		{
+			method: http.MethodDelete, path: "/api/v1/ai-accounts/{id}", id: "deleteAIAccount", tag: "settings",
+			summary:    "Remove an AI account profile without deleting provider credentials",
+			pathParams: []any{controllers.AIAccountIDParam{}},
+			resps: []respUnit{
+				{http.StatusNoContent, nil},
+				{http.StatusNotFound, envelope.APIError{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+			},
+		},
+		{
+			method: http.MethodPost, path: "/api/v1/ai-accounts/{id}/login", id: "loginAIAccount", tag: "settings",
+			summary:    "Start the provider-owned OAuth login for an isolated profile",
+			pathParams: []any{controllers.AIAccountIDParam{}},
+			resps: []respUnit{
+				{http.StatusAccepted, controllers.AIAccountResponse{}},
+				{http.StatusNotFound, envelope.APIError{}},
+				{http.StatusConflict, envelope.APIError{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+			},
+		},
+		{
+			method: http.MethodPut, path: "/api/v1/ai-accounts/{id}/credential", id: "setAIAccountCredential", tag: "settings",
+			summary:    "Store a Claude profile token in the operating system credential vault",
+			pathParams: []any{controllers.AIAccountIDParam{}},
+			reqBody:    controllers.SetAIAccountCredentialRequest{},
+			resps: []respUnit{
+				{http.StatusOK, controllers.AIAccountResponse{}},
+				{http.StatusBadRequest, envelope.APIError{}},
+				{http.StatusNotFound, envelope.APIError{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+			},
+		},
+		{
+			method: http.MethodDelete, path: "/api/v1/ai-accounts/{id}/credential", id: "clearAIAccountCredential", tag: "settings",
+			summary:    "Clear only the selected AI account login credential",
+			pathParams: []any{controllers.AIAccountIDParam{}},
+			resps: []respUnit{
+				{http.StatusNoContent, nil},
+				{http.StatusNotFound, envelope.APIError{}},
+				{http.StatusInternalServerError, envelope.APIError{}},
+			},
+		},
+		{
 			method: http.MethodGet, path: "/api/v1/settings", id: "getSettings", tag: "settings",
 			summary: "Read the daemon-owned user preferences",
 			resps: []respUnit{

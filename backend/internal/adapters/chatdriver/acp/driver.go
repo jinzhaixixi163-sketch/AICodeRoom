@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -93,6 +94,20 @@ func (d *Driver) Probe(ctx context.Context) (ports.ChatCapabilities, error) {
 		return nil, fmt.Errorf("%w: incomplete ACP binding", ports.ErrChatDriverUnavailable)
 	}
 	if err := d.cfg.Probe(ctx); err != nil {
+		return nil, err
+	}
+	return cloneCapabilities(d.cfg.Capabilities), nil
+}
+
+// ProbeEnvironment validates discovery against an isolated account profile.
+// Provider auth probes historically inspect only the default config directory,
+// so this path resolves the launch with the selected environment and leaves the
+// real protocol handshake to Start, which receives the same environment.
+func (d *Driver) ProbeEnvironment(ctx context.Context, env map[string]string) (ports.ChatCapabilities, error) {
+	if d.cfg.Launch == nil {
+		return nil, fmt.Errorf("%w: incomplete ACP binding", ports.ErrChatDriverUnavailable)
+	}
+	if _, err := d.cfg.Launch(ctx, LaunchConfig{WorkspacePath: os.TempDir(), Env: env}); err != nil {
 		return nil, err
 	}
 	return cloneCapabilities(d.cfg.Capabilities), nil

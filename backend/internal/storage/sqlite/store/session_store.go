@@ -288,6 +288,7 @@ func rowToRecord(row gen.Session) domain.SessionRecord {
 		PinnedAt:           nullTimeToTimePtr(row.PinnedAt),
 		TerminateOnPRMerge: row.TerminateOnPRMerge,
 		Metadata: domain.SessionMetadata{
+			AccountProfileID:          domain.AccountProfileID(row.AccountProfileID),
 			Branch:                    row.Branch,
 			WorkspacePath:             row.WorkspacePath,
 			WorkspaceRepoPath:         row.WorkspaceRepoPath,
@@ -355,6 +356,7 @@ func recordToInsert(rec domain.SessionRecord, num int64) gen.InsertSessionParams
 		SessionMode:               domain.NormalizeSessionMode(rec.Mode),
 		ProviderConversationID:    rec.Metadata.ProviderConversationID,
 		ControllerGeneration:      rec.Metadata.ControllerGeneration,
+		AccountProfileID:          string(rec.Metadata.AccountProfileID),
 		CreatedAt:                 rec.CreatedAt,
 		UpdatedAt:                 rec.UpdatedAt,
 	}
@@ -391,6 +393,7 @@ func recordToUpdate(rec domain.SessionRecord) gen.UpdateSessionParams {
 		BrowserCapabilityVerifier: rec.Metadata.BrowserCapabilityVerifier,
 		ProviderConversationID:    rec.Metadata.ProviderConversationID,
 		ControllerGeneration:      rec.Metadata.ControllerGeneration,
+		AccountProfileID:          string(rec.Metadata.AccountProfileID),
 		UpdatedAt:                 rec.UpdatedAt,
 	}
 }

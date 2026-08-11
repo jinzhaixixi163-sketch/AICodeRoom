@@ -366,6 +366,11 @@ func ResolveCodexBinary(ctx context.Context) (string, error) {
 		"/usr/local/bin/codex",
 		"/opt/homebrew/bin/codex",
 	}
+	if runtime.GOOS == "darwin" {
+		// The ChatGPT desktop app bundles the Codex CLI but GUI-launched daemons
+		// do not inherit a shell PATH that can discover it.
+		candidates = append(candidates, "/Applications/ChatGPT.app/Contents/Resources/codex")
+	}
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,
 			filepath.Join(home, ".npm-global", "bin", "codex"),

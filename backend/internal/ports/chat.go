@@ -122,6 +122,13 @@ const (
 // ChatCapabilities is the set a driver reports from Probe.
 type ChatCapabilities map[ChatCapability]bool
 
+// ChatEnvironmentProber is an optional refinement for account-profile-aware
+// preflight. It checks the same isolated environment the real controller will
+// use instead of consulting the provider's legacy/default login.
+type ChatEnvironmentProber interface {
+	ProbeEnvironment(ctx context.Context, env map[string]string) (ChatCapabilities, error)
+}
+
 // Has reports whether the capability is present and enabled.
 func (c ChatCapabilities) Has(capability ChatCapability) bool { return c[capability] }
 

@@ -4,7 +4,6 @@ import { TooltipProvider } from "../components/ui/tooltip";
 import type { QueryClient } from "@tanstack/react-query";
 import { captureRendererEvent, routeSurface } from "../lib/telemetry";
 import { useKeybindingsStore } from "../stores/keybindings-store";
-import { AccountGate } from "../lib/account-context";
 
 export const Route = createRootRouteWithContext<{
 	queryClient: QueryClient;
@@ -28,9 +27,7 @@ function RootComponent() {
 
 	return (
 		<TooltipProvider>
-			<AccountGate>
-				<Outlet />
-			</AccountGate>
+			<Outlet />
 		</TooltipProvider>
 	);
 }

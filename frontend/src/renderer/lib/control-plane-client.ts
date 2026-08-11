@@ -42,13 +42,69 @@ export class ControlPlaneError extends Error {
 	}
 }
 
-const baseUrl = (import.meta.env.VITE_AICODEROOM_API_URL || "http://127.0.0.1:8788").replace(/\/+$/, "");
+// The open-source desktop app is local-first and has no AICodeRoom account
+// gate. A separately deployed collaboration control plane is opt-in: only an
+// explicit URL enables network-backed projects, tasks, and backup metadata.
+const configuredBaseUrl = import.meta.env.VITE_AICODEROOM_API_URL?.trim();
+const baseUrl = configuredBaseUrl?.replace(/\/+$/, "") ?? "";
+const controlPlaneEnabled = baseUrl !== "";
 const rendererTestMode = import.meta.env.MODE === "test";
+
+function localProject(input: { clientProjectId: string; name: string }): AccountProject {
+	return {
+		id: `local:${input.clientProjectId}`,
+		name: input.name,
+		sourceKind: "local",
+		clientProjectId: input.clientProjectId,
+		role: "owner",
+	};
+}
+
+function defaultLocalBackup(projectId: string): ProjectBackupSettings {
+	return {
+		projectId,
+		targetType: "none",
+		syncMode: "manual",
+		repositoryUrl: null,
+		branch: null,
+		lastSyncStatus: "never",
+		lastSyncedAt: null,
+		lastError: null,
+	};
+}
+
+function localBackupKey(projectId: string): string {
+	return `aicoderoom.backup.settings.${projectId}`;
+}
+
+function readLocalBackup(projectId: string): ProjectBackupSettings {
+	try {
+		const raw = window.localStorage.getItem(localBackupKey(projectId));
+		if (raw) {
+			return {
+				...defaultLocalBackup(projectId),
+				...(JSON.parse(raw) as Partial<ProjectBackupSettings>),
+				projectId,
+			};
+		}
+	} catch {
+		// A corrupt local preference must not prevent the project from opening.
+	}
+	return defaultLocalBackup(projectId);
+}
+
+function writeLocalBackup(settings: ProjectBackupSettings): ProjectBackupSettings {
+	window.localStorage.setItem(localBackupKey(settings.projectId), JSON.stringify(settings));
+	return settings;
+}
 
 async function request<T>(
 	path: string,
 	options: { method?: string; body?: unknown; authenticated?: boolean } = {},
 ): Promise<T> {
+	if (!controlPlaneEnabled) {
+		throw new ControlPlaneError(uiText("AICodeRoom Server is unavailable"), "server_unavailable");
+	}
 	const token = options.authenticated === false ? null : await aoBridge.account.getToken();
 	if (options.authenticated !== false && !token)
 		throw new ControlPlaneError(uiText("Please sign in"), "authentication_required", 401);
@@ -123,15 +179,7 @@ export async function ensureControlPlaneProject(input: {
 	name: string;
 	repositoryUrl?: string;
 }): Promise<AccountProject> {
-	if (rendererTestMode) {
-		return {
-			id: `test:${input.clientProjectId}`,
-			name: input.name,
-			sourceKind: "local",
-			clientProjectId: input.clientProjectId,
-			role: "owner",
-		};
-	}
+	if (rendererTestMode || !controlPlaneEnabled) return localProject(input);
 	return (
 		await request<{ project: AccountProject }>("/v1/projects", {
 			method: "POST",
@@ -146,18 +194,8 @@ export async function ensureControlPlaneProject(input: {
 }
 
 export async function getProjectBackupSettings(projectId: string): Promise<ProjectBackupSettings> {
-	if (rendererTestMode) {
-		return {
-			projectId,
-			targetType: "none",
-			syncMode: "manual",
-			repositoryUrl: null,
-			branch: null,
-			lastSyncStatus: "never",
-			lastSyncedAt: null,
-			lastError: null,
-		};
-	}
+	if (rendererTestMode) return defaultLocalBackup(projectId);
+	if (!controlPlaneEnabled) return readLocalBackup(projectId);
 	return (await request<{ backup: ProjectBackupSettings }>(`/v1/projects/${encodeURIComponent(projectId)}/backup`))
 		.backup;
 }
@@ -166,14 +204,15 @@ export async function updateProjectBackupSettings(
 	projectId: string,
 	input: Pick<ProjectBackupSettings, "targetType" | "syncMode" | "repositoryUrl" | "branch">,
 ): Promise<ProjectBackupSettings> {
-	if (rendererTestMode) {
-		return {
+	if (rendererTestMode || !controlPlaneEnabled) {
+		const settings: ProjectBackupSettings = {
 			projectId,
 			...input,
 			lastSyncStatus: "never",
 			lastSyncedAt: null,
 			lastError: null,
 		};
+		return rendererTestMode ? settings : writeLocalBackup(settings);
 	}
 	return (
 		await request<{ backup: ProjectBackupSettings }>(`/v1/projects/${encodeURIComponent(projectId)}/backup`, {
@@ -191,6 +230,7 @@ export async function createControlPlaneTask(input: {
 	aoSessionId?: string;
 }): Promise<string> {
 	if (rendererTestMode) return `test-task:${input.aoSessionId ?? "draft"}`;
+	if (!controlPlaneEnabled) return `local-task:${crypto.randomUUID()}`;
 	const project = await ensureControlPlaneProject({
 		clientProjectId: input.clientProjectId,
 		name: input.projectName,
@@ -214,7 +254,7 @@ export async function updateControlPlaneTask(
 		resultSummary?: string;
 	},
 ): Promise<void> {
-	if (rendererTestMode) return;
+	if (rendererTestMode || !controlPlaneEnabled || taskId.startsWith("local-task:")) return;
 	await request(`/v1/tasks/${encodeURIComponent(taskId)}`, {
 		method: "PATCH",
 		body: input,

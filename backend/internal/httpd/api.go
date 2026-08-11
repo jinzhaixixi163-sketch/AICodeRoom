@@ -19,6 +19,7 @@ import (
 
 // APIDeps bundles every service the API layer's controllers depend on.
 type APIDeps struct {
+	AIAccounts         controllers.AIAccountService
 	Agents             controllers.AgentCatalog
 	Projects           projectsvc.Manager
 	Sessions           controllers.SessionService
@@ -52,6 +53,7 @@ type APIDeps struct {
 type API struct {
 	cfg           config.Config
 	agents        *controllers.AgentsController
+	aiAccounts    *controllers.AIAccountsController
 	projects      *controllers.ProjectsController
 	sessions      *controllers.SessionsController
 	usage         *controllers.UsageController
@@ -73,7 +75,8 @@ type API struct {
 // environment.
 func NewAPI(cfg config.Config, deps APIDeps) *API {
 	return &API{
-		cfg: cfg,
+		cfg:        cfg,
+		aiAccounts: &controllers.AIAccountsController{Svc: deps.AIAccounts},
 		agents: &controllers.AgentsController{
 			Catalog: deps.Agents,
 		},
@@ -116,6 +119,7 @@ func (a *API) Register(root chi.Router) {
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Timeout(timeout))
+			a.aiAccounts.Register(r)
 			a.agents.Register(r)
 			a.projects.Register(r)
 			a.sessions.Register(r)

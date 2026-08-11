@@ -733,12 +733,21 @@ func (f SnapshotPageReaderFunc) LoadConversationSnapshotPage(
 // Called before any durable state exists, so an unsupported request costs nothing
 // — no terminated orphan row, no wasted worktree. It never downgrades to TUI:
 // that would put the user in a terminal they did not ask for.
-func (s *Service) PreflightChat(ctx context.Context, harness domain.AgentHarness) error {
+func (s *Service) PreflightChat(ctx context.Context, harness domain.AgentHarness, env map[string]string) error {
 	driver, err := s.drivers.Driver(harness)
 	if err != nil {
 		return fmt.Errorf("%w: %s has no chat driver", ports.ErrChatUnsupported, harness)
 	}
-	caps, err := driver.Probe(ctx)
+	var caps ports.ChatCapabilities
+	if len(env) > 0 {
+		if prober, ok := driver.(ports.ChatEnvironmentProber); ok {
+			caps, err = prober.ProbeEnvironment(ctx, env)
+		} else {
+			caps, err = driver.Probe(ctx)
+		}
+	} else {
+		caps, err = driver.Probe(ctx)
+	}
 	if err != nil {
 		return err
 	}

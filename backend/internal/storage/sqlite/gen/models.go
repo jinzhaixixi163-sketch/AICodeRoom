@@ -21,6 +21,16 @@ type AgentModelCatalog struct {
 	FetchedAt     time.Time
 }
 
+type AiAccountProfile struct {
+	ID        string
+	Harness   string
+	Label     string
+	ConfigDir string
+	Enabled   bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type AppSetting struct {
 	ID                 int64
 	DefaultSessionMode domain.SessionMode
@@ -324,6 +334,7 @@ type Session struct {
 	ProviderConversationID    string
 	ControllerGeneration      string
 	BrowserCapabilityVerifier string
+	AccountProfileID          string
 }
 
 type SessionCleanupFact struct {

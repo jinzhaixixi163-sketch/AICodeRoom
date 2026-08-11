@@ -333,8 +333,12 @@ const (
 
 // LaunchConfig carries inputs needed to build a new agent launch command.
 type LaunchConfig struct {
-	Config      AgentConfig
-	DataDir     string
+	Config  AgentConfig
+	DataDir string
+	// Env contains launch-time provider profile overrides. Adapters must not
+	// mutate it; optional pre-launch work may use it to address the same isolated
+	// config store as the process that follows.
+	Env         map[string]string
 	IssueID     string
 	Kind        domain.SessionKind
 	Permissions PermissionMode

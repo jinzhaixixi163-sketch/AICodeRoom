@@ -237,7 +237,7 @@ func (c *SessionsController) spawn(w http.ResponseWriter, r *http.Request) {
 		envelope.WriteAPIError(w, r, http.StatusBadRequest, "bad_request", attachErr.code, attachErr.message, nil)
 		return
 	}
-	sess, promptBytes, systemPromptBytes, err := c.Svc.Spawn(r.Context(), ports.SpawnConfig{ProjectID: in.ProjectID, IssueID: in.IssueID, Kind: in.Kind, Harness: in.Harness, Branch: in.Branch, RequestedMode: in.Mode, Prompt: in.Prompt, DisplayName: displayName, Attachments: attachments})
+	sess, promptBytes, systemPromptBytes, err := c.Svc.Spawn(r.Context(), ports.SpawnConfig{ProjectID: in.ProjectID, IssueID: in.IssueID, Kind: in.Kind, Harness: in.Harness, AccountProfileID: in.AccountProfileID, Branch: in.Branch, RequestedMode: in.Mode, Prompt: in.Prompt, DisplayName: displayName, Attachments: attachments})
 	if err != nil {
 		envelope.WriteError(w, r, err)
 		return
@@ -1096,12 +1096,13 @@ func (c *SessionsController) delegateTask(w http.ResponseWriter, r *http.Request
 	}
 
 	out, err := c.Svc.DelegateTask(r.Context(), sessionsvc.DelegateTaskInput{
-		ProjectID:      in.ProjectID,
-		Brief:          domain.SanitizeControlChars(in.Brief),
-		RequestedAgent: in.Agent,
-		Model:          domain.SanitizeControlChars(strings.TrimSpace(in.Model)),
-		RequestedMode:  in.Mode,
-		Attachments:    attachments,
+		ProjectID:        in.ProjectID,
+		Brief:            domain.SanitizeControlChars(in.Brief),
+		RequestedAgent:   in.Agent,
+		AccountProfileID: in.AccountProfileID,
+		Model:            domain.SanitizeControlChars(strings.TrimSpace(in.Model)),
+		RequestedMode:    in.Mode,
+		Attachments:      attachments,
 	})
 	if err != nil {
 		envelope.WriteError(w, r, err)
@@ -1471,11 +1472,12 @@ func previewFileURL(r *http.Request, id domain.SessionID, entry string) (string,
 
 func sessionView(s domain.Session) SessionView {
 	return SessionView{
-		Session:         s,
-		Branch:          s.Metadata.Branch,
-		PreviewURL:      s.Metadata.PreviewURL,
-		PreviewRevision: s.Metadata.PreviewRevision,
-		PRs:             sessionPRFacts(s.PRs),
+		Session:          s,
+		Branch:           s.Metadata.Branch,
+		AccountProfileID: s.Metadata.AccountProfileID,
+		PreviewURL:       s.Metadata.PreviewURL,
+		PreviewRevision:  s.Metadata.PreviewRevision,
+		PRs:              sessionPRFacts(s.PRs),
 	}
 }
 

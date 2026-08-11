@@ -25,15 +25,18 @@ const (
 // SessionMetadata is the typed, off-status metadata for a session: operational
 // handles and seed inputs used by Session Manager and reaper.
 type SessionMetadata struct {
-	Branch            string `json:"branch,omitempty"`
-	WorkspacePath     string `json:"workspacePath,omitempty"`
-	WorkspaceRepoPath string `json:"workspaceRepoPath,omitempty"`
-	DiffBaseSHA       string `json:"diffBaseSha,omitempty"`
-	DiffBaseRef       string `json:"diffBaseRef,omitempty"`
-	RuntimeHandleID   string `json:"runtimeHandleId,omitempty"`
-	RuntimeLaunchID   string `json:"runtimeLaunchId,omitempty"`
-	AgentSessionID    string `json:"agentSessionId,omitempty"`
-	Prompt            string `json:"prompt,omitempty"`
+	// AccountProfileID binds this session to one isolated provider login. Empty
+	// preserves the provider's legacy/default login behavior.
+	AccountProfileID  AccountProfileID `json:"accountProfileId,omitempty"`
+	Branch            string           `json:"branch,omitempty"`
+	WorkspacePath     string           `json:"workspacePath,omitempty"`
+	WorkspaceRepoPath string           `json:"workspaceRepoPath,omitempty"`
+	DiffBaseSHA       string           `json:"diffBaseSha,omitempty"`
+	DiffBaseRef       string           `json:"diffBaseRef,omitempty"`
+	RuntimeHandleID   string           `json:"runtimeHandleId,omitempty"`
+	RuntimeLaunchID   string           `json:"runtimeLaunchId,omitempty"`
+	AgentSessionID    string           `json:"agentSessionId,omitempty"`
+	Prompt            string           `json:"prompt,omitempty"`
 	// ProviderConversationID is the opaque handle a Chat driver needs to resume
 	// this session's provider conversation after a restart (a Codex thread id
 	// today). Normally empty for TUI sessions. It remains a distinct field from

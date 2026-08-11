@@ -34,6 +34,7 @@ import (
 	"github.com/aoagents/agent-orchestrator/backend/internal/push"
 	"github.com/aoagents/agent-orchestrator/backend/internal/runfile"
 	agentsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/agent"
+	aiaccountsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/aiaccount"
 	browsersvc "github.com/aoagents/agent-orchestrator/backend/internal/service/browser"
 	chatsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/chat"
 	devimportsvc "github.com/aoagents/agent-orchestrator/backend/internal/service/devimport"
@@ -192,6 +193,19 @@ func Run() error {
 		chatDrivers,
 		func() time.Time { return time.Now().UTC() },
 	)
+	aiAccountSvc := aiaccountsvc.New(store, cfg.DataDir, aiaccountsvc.WithBinaryResolver(
+		func(resolveCtx context.Context, harness domain.AgentHarness) (string, error) {
+			agent, ok := agents.Agent(harness)
+			if !ok {
+				return "", fmt.Errorf("agent %s is not registered", harness)
+			}
+			resolver, ok := agent.(ports.AgentBinaryResolver)
+			if !ok {
+				return "", fmt.Errorf("agent %s does not expose a binary resolver", harness)
+			}
+			return resolver.ResolveBinary(resolveCtx)
+		},
+	))
 
 	// Chat service. The driver registry is the capability gate: a harness with no
 	// registered driver cannot start in chat mode, so an unsupported request fails
@@ -235,7 +249,7 @@ func Run() error {
 		NewID:    uuid.NewString,
 	})
 
-	sessionSvc, reviewSvc, sessMgr, err := startSession(ctx, cfg, runtimeAdapter, store, lcStack.LCM, messenger, telemetrySink, agents, managedPreview, browserBroker, browserAuthority, chatLauncher{svc: chatSvc}, settingsSvc, log)
+	sessionSvc, reviewSvc, sessMgr, err := startSession(ctx, cfg, runtimeAdapter, store, lcStack.LCM, messenger, telemetrySink, agents, managedPreview, browserBroker, browserAuthority, chatLauncher{svc: chatSvc}, settingsSvc, aiAccountSvc, log)
 	if err != nil {
 		stop()
 		lcStack.Stop()
@@ -353,6 +367,7 @@ func Run() error {
 	}
 
 	srv, err := httpd.NewWithDeps(cfg, log, termMgr, httpd.APIDeps{
+		AIAccounts:         aiAccountSvc,
 		Projects:           projectSvc,
 		Agents:             agentSvc,
 		Sessions:           sessionSvc,

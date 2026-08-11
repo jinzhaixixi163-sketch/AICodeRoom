@@ -428,7 +428,11 @@ func (m *Manager) preflightInterfaceTarget(
 		if m.chat == nil {
 			return ports.ErrChatUnsupported
 		}
-		return m.chat.PreflightChat(ctx, rec.Harness)
+		env, err := m.resolveAccountProfile(ctx, rec.Metadata.AccountProfileID, rec.Harness)
+		if err != nil {
+			return err
+		}
+		return m.chat.PreflightChat(ctx, rec.Harness, env)
 	}
 	agent, ok := m.agents.Agent(rec.Harness)
 	if !ok {

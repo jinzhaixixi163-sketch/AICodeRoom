@@ -131,6 +131,14 @@ func capabilities() ports.ChatCapabilities {
 // Probe reports what this install can do without creating a conversation, so an
 // unsupported request can be refused before AO commits a session or worktree.
 func (d *Driver) Probe(ctx context.Context) (ports.ChatCapabilities, error) {
+	return d.probe(ctx, nil, true)
+}
+
+func (d *Driver) ProbeEnvironment(ctx context.Context, env map[string]string) (ports.ChatCapabilities, error) {
+	return d.probe(ctx, env, false)
+}
+
+func (d *Driver) probe(ctx context.Context, env map[string]string, checkDefaultAuth bool) (ports.ChatCapabilities, error) {
 	bin, err := d.plugin.ResolveBinary(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ports.ErrChatDriverUnavailable, err)
@@ -138,12 +146,14 @@ func (d *Driver) Probe(ctx context.Context) (ports.ChatCapabilities, error) {
 
 	// An unknown auth result is not proof of failure — the same rule AO already
 	// applies to runtime probes. Only an explicit unauthorized blocks creation.
-	status, err := d.plugin.AuthStatus(ctx)
-	if err == nil && status == ports.AgentAuthStatusUnauthorized {
-		return nil, ports.ErrChatAuthRequired
-	}
-	if err != nil {
-		d.log.Debug("codex auth probe inconclusive; continuing", "error", err)
+	if checkDefaultAuth {
+		status, authErr := d.plugin.AuthStatus(ctx)
+		if authErr == nil && status == ports.AgentAuthStatusUnauthorized {
+			return nil, ports.ErrChatAuthRequired
+		}
+		if authErr != nil {
+			d.log.Debug("codex auth probe inconclusive; continuing", "error", authErr)
+		}
 	}
 	versionProbe := d.versionProbe
 	if versionProbe == nil {
@@ -176,7 +186,7 @@ func (d *Driver) Probe(ctx context.Context) (ports.ChatCapabilities, error) {
 	}
 	probeCtx, cancel := context.WithTimeout(ctx, handshakeTimeout)
 	defer cancel()
-	conv, err := d.connect(probeCtx, workdir, nil)
+	conv, err := d.connect(probeCtx, workdir, env)
 	if err != nil {
 		return nil, err
 	}

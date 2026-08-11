@@ -262,7 +262,7 @@ type transitionChat struct {
 	relayIDs         []string
 }
 
-func (c *transitionChat) PreflightChat(ctx context.Context, _ domain.AgentHarness) error {
+func (c *transitionChat) PreflightChat(ctx context.Context, _ domain.AgentHarness, _ map[string]string) error {
 	if c.preflightStarted != nil {
 		select {
 		case c.preflightStarted <- struct{}{}:

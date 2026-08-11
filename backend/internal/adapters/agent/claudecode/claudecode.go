@@ -211,7 +211,7 @@ func (p *Plugin) PreLaunch(ctx context.Context, cfg ports.LaunchConfig) error {
 	if cfg.WorkspacePath == "" {
 		return nil
 	}
-	cfgPath, err := claudeConfigPath()
+	cfgPath, err := claudeConfigPathForEnv(cfg.Env)
 	if err != nil {
 		return err
 	}
@@ -599,6 +599,13 @@ func claudeConfigPath() (string, error) {
 		return "", fmt.Errorf("claude-code: resolve home directory: %w", err)
 	}
 	return filepath.Join(home, ".claude.json"), nil
+}
+
+func claudeConfigPathForEnv(env map[string]string) (string, error) {
+	if configDir := strings.TrimSpace(env["CLAUDE_CONFIG_DIR"]); configDir != "" {
+		return filepath.Join(configDir, ".claude.json"), nil
+	}
+	return claudeConfigPath()
 }
 
 // ensureWorkspaceTrusted records workspacePath as trusted in Claude Code's

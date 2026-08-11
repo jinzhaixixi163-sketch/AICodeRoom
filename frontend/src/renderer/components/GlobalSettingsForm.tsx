@@ -11,8 +11,9 @@ import { UpdatesSection } from "./settings/UpdatesSection";
 import { DevSettingsSection } from "./settings/DevSettingsSection";
 import { KeyboardShortcutsSettingsDialog } from "./settings/KeyboardShortcutsSettingsDialog";
 import { UsageSection } from "./settings/UsageSection";
+import { AIAccountsSection } from "./settings/AIAccountsSection";
 
-export type GlobalSettingsSection = "general" | "usage" | "updates" | "developer" | "help" | "all";
+export type GlobalSettingsSection = "general" | "accounts" | "usage" | "updates" | "developer" | "help" | "all";
 
 export function GlobalSettingsForm({ section = "all" }: { section?: GlobalSettingsSection }) {
 	const { t } = useTranslation();
@@ -46,6 +47,7 @@ export function GlobalSettingsForm({ section = "all" }: { section?: GlobalSettin
 					</>
 				)}
 				{(section === "all" || section === "usage") && <UsageSection titleHidden={leadingTitleHidden} />}
+				{section === "accounts" && <AIAccountsSection titleHidden={leadingTitleHidden} />}
 				{(section === "all" || section === "updates") && <UpdatesSection titleHidden={leadingTitleHidden} />}
 				{(section === "all" || section === "developer") && (
 					<>

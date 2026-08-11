@@ -19,6 +19,7 @@ import { captureRendererEvent } from "../lib/telemetry";
 import { agentsQueryKey, agentsQueryOptions, refreshAgentsIfStale } from "../hooks/useAgentsQuery";
 import { type FileAttachmentPayload, useFileAttachments } from "../hooks/useFileAttachments";
 import { useSettings } from "../hooks/useSettings";
+import { useAIAccounts } from "../hooks/useAIAccounts";
 import {
 	agentModelsQueryKey,
 	agentModelsQueryOptions,
@@ -38,6 +39,7 @@ type CreateTaskInput = {
 	projectName: string;
 	brief: string;
 	agent?: DelegateAgent;
+	accountProfileId?: string;
 	model?: string;
 	mode?: "tui";
 	attachments?: FileAttachmentPayload[];
@@ -85,6 +87,8 @@ export function TaskComposer({
 	const [model, setModel] = useState("");
 	const [mode, setMode] = useState("");
 	const [agent, setAgent] = useState("");
+	const [accountProfileId, setAccountProfileId] = useState("");
+	const [accountTouched, setAccountTouched] = useState(false);
 	const [agentTouched, setAgentTouched] = useState(false);
 	const [modelTouched, setModelTouched] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,6 +120,7 @@ export function TaskComposer({
 						projectId: input.projectId,
 						brief: input.brief,
 						agent: input.agent,
+						accountProfileId: input.accountProfileId,
 						model: input.model,
 						...(input.mode ? { mode: input.mode } : {}),
 						...(input.attachments && input.attachments.length > 0 ? { attachments: input.attachments } : {}),
@@ -159,6 +164,7 @@ export function TaskComposer({
 		},
 	});
 	const agentsQuery = useQuery(agentsQueryOptions);
+	const aiAccountsQuery = useAIAccounts();
 	const { settings } = useSettings();
 	// Freshen the inventory on open so a just-installed or just-authenticated agent
 	// is present without the user asking for it.
@@ -174,6 +180,14 @@ export function TaskComposer({
 	const globalDefaultAgent = projectQuery.data?.agent ?? "";
 	const defaultWorkerAgent = projectWorkerAgent || globalDefaultAgent;
 	const selectedAgent = agent || defaultWorkerAgent;
+	const matchingAccounts = (aiAccountsQuery.data ?? []).filter(
+		(account) => account.harness === selectedAgent && account.enabled,
+	);
+	// Once isolated profiles exist, always bind a new UI-created task to one of
+	// them. Unbound sessions remain readable/restorable for compatibility, but
+	// the composer must not silently fall back to ambient provider credentials.
+	const defaultAccountProfileId =
+		matchingAccounts.find((account) => account.authStatus === "authenticated")?.id ?? matchingAccounts[0]?.id ?? "";
 	const defaultWorkerModel =
 		projectQuery.data?.config?.worker?.agentConfig?.model ?? projectQuery.data?.config?.agentConfig?.model ?? "";
 	const defaultWorkerMode =
@@ -201,6 +215,9 @@ export function TaskComposer({
 		if (!agentTouched) setAgent(defaultWorkerAgent);
 	}, [agentTouched, defaultWorkerAgent]);
 	useEffect(() => {
+		if (!accountTouched) setAccountProfileId(defaultAccountProfileId);
+	}, [accountTouched, defaultAccountProfileId]);
+	useEffect(() => {
 		if (!modelTouched) {
 			setModel(defaultModelForSelectedAgent);
 			setMode(defaultModeForSelectedAgent);
@@ -221,6 +238,10 @@ export function TaskComposer({
 
 	const submitTask = async (interfaceMode?: "tui") => {
 		if (!projectId || isSubmitting) return;
+		if (matchingAccounts.length > 0 && accountProfileId === "") {
+			setError(t("newTask.aiAccountRequired"));
+			return;
+		}
 
 		const cleanModel = model.trim();
 		const cleanMode = mode.trim();
@@ -241,6 +262,7 @@ export function TaskComposer({
 				// The visible selection is authoritative: it is either the user's pick
 				// or the resolved default, so spawning names it explicitly.
 				agent: selectedAgent ? (selectedAgent as CreateTaskInput["agent"]) : undefined,
+				accountProfileId: accountProfileId || undefined,
 				model: requestedModel,
 				mode: interfaceMode,
 				attachments: attachmentPayloads.length > 0 ? attachmentPayloads : undefined,
@@ -406,9 +428,32 @@ export function TaskComposer({
 								setModel("");
 								setMode("");
 								setModelTouched(false);
+								setAccountProfileId("");
+								setAccountTouched(false);
 							}}
 						/>
 					</div>
+					{(selectedAgent === "codex" || selectedAgent === "claude-code") && matchingAccounts.length > 0 ? (
+						<>
+							<span className="composer-toolbar-divider" aria-hidden="true" />
+							<div className="composer-toolbar-slot">
+								<SettingsOptionMenu
+									aria-label={t("newTask.aiAccount")}
+									value={accountProfileId}
+									options={matchingAccounts.map((account) => ({
+										value: account.id,
+										label: `${account.label} · ${t(`settings.aiAccounts.status.${account.authStatus}`)}`,
+									}))}
+									triggerClassName="composer-chip composer-toolbar-option w-full justify-between bg-transparent!"
+									menuAlign="start"
+									onChange={(value) => {
+										setAccountProfileId(value);
+										setAccountTouched(true);
+									}}
+								/>
+							</div>
+						</>
+					) : null}
 					<span className="composer-toolbar-divider" aria-hidden="true" />
 					<div className="composer-toolbar-slot">
 						<TaskModelPicker

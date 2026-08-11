@@ -89,6 +89,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List isolated Codex and Claude account profiles */
+        get: operations["listAIAccounts"];
+        put?: never;
+        /** Create an isolated AI account profile */
+        post: operations["createAIAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an AI account profile without deleting provider credentials */
+        delete: operations["deleteAIAccount"];
+        options?: never;
+        head?: never;
+        /** Update an AI account profile */
+        patch: operations["updateAIAccount"];
+        trace?: never;
+    };
+    "/api/v1/ai-accounts/{id}/credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Store a Claude profile token in the operating system credential vault */
+        put: operations["setAIAccountCredential"];
+        post?: never;
+        /** Clear only the selected AI account login credential */
+        delete: operations["clearAIAccountCredential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-accounts/{id}/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start the provider-owned OAuth login for an isolated profile */
+        post: operations["loginAIAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/browser/commands": {
         parameters: {
             query?: never;
@@ -1453,6 +1524,20 @@ export interface components {
             validatedAt?: string;
             warning?: string;
         };
+        AiaccountProfile: {
+            authMethod?: string;
+            /** @enum {string} */
+            authStatus: "authenticated" | "signed_out" | "unavailable" | "authenticating";
+            /** Format: date-time */
+            createdAt: string;
+            credentialConfigured: boolean;
+            enabled: boolean;
+            harness: string;
+            id: string;
+            label: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         BrowserCommandRequest: {
             action: string;
             args?: {
@@ -1516,7 +1601,19 @@ export interface components {
         ContainerReapConfig: {
             disabled?: boolean;
         };
+        ControllersAIAccountResponse: {
+            account: components["schemas"]["AiaccountProfile"];
+        };
+        ControllersCreateAIAccountRequest: {
+            /** @enum {string} */
+            harness: "codex" | "claude-code";
+            label?: string;
+        };
+        ControllersListAIAccountsResponse: {
+            accounts: components["schemas"]["AiaccountProfile"][];
+        };
         ControllersSessionView: {
+            accountProfileId?: string;
             activity: components["schemas"]["DomainActivity"];
             branch?: string;
             /** Format: date-time */
@@ -1548,9 +1645,16 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        ControllersSetAIAccountCredentialRequest: {
+            token: string;
+        };
         ControllersSpawnAttachmentInput: {
             data: string;
             mimeType?: string;
+        };
+        ControllersUpdateAIAccountRequest: {
+            enabled?: null | boolean;
+            label?: null | string;
         };
         ConversationAccountPayload: {
             authMode?: string;
@@ -1774,6 +1878,7 @@ export interface components {
             resolveError: string;
         };
         DelegateTaskRequest: {
+            accountProfileId?: string;
             /** @enum {string} */
             agent?: "claude-code" | "codex" | "aider" | "opencode" | "grok" | "droid" | "amp" | "agy" | "crush" | "cursor" | "qwen" | "copilot" | "goose" | "auggie" | "continue" | "devin" | "cline" | "kimi" | "muse" | "kiro" | "kilocode" | "vibe" | "pi" | "kimchi" | "prime-agent" | "autohand" | "fake";
             attachments?: components["schemas"]["ControllersSpawnAttachmentInput"][];
@@ -2416,6 +2521,7 @@ export interface components {
             orchestrator: components["schemas"]["OrchestratorResponse"];
         };
         SpawnSessionRequest: {
+            accountProfileId?: string;
             attachments?: components["schemas"]["ControllersSpawnAttachmentInput"][];
             branch?: string;
             displayName?: string;
@@ -2842,6 +2948,331 @@ export interface operations {
             };
             /** @description Not Implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    listAIAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControllersListAIAccountsResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Not Implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    createAIAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ControllersCreateAIAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControllersAIAccountResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    deleteAIAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI account profile id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    updateAIAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI account profile id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ControllersUpdateAIAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControllersAIAccountResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    setAIAccountCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI account profile id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ControllersSetAIAccountCredentialRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControllersAIAccountResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    clearAIAccountCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI account profile id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+        };
+    };
+    loginAIAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI account profile id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControllersAIAccountResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

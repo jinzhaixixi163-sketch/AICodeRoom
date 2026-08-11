@@ -1,6 +1,24 @@
 > **AICodeRoom development baseline**
 >
-> This branch is the AICodeRoom desktop product fork of Agent Orchestrator. It keeps the upstream execution engine and compatibility boundaries while adding AICodeRoom branding and a simplified-Chinese-first UI. See [`docs/aicoderoom/BASELINE.md`](docs/aicoderoom/BASELINE.md) for the exact fork scope, protected modules, and local development workflow. The upstream project documentation and Apache 2.0 attribution remain below.
+> This branch is the open-source AICodeRoom desktop fork of Agent Orchestrator. It opens directly in local-first mode with no AICodeRoom account or password gate, while preserving isolated GPT/Codex and Claude account profiles. See [`docs/aicoderoom/BASELINE.md`](docs/aicoderoom/BASELINE.md) for the fork scope and [`docs/aicoderoom/ACCOUNT-ISOLATION.md`](docs/aicoderoom/ACCOUNT-ISOLATION.md) for the exact security boundary. The upstream project documentation and Apache 2.0 attribution remain below.
+>
+> AICodeRoom release downloads are not published yet. Build the desktop app from this repository; download links in the retained upstream documentation below install upstream Agent Orchestrator, not AICodeRoom.
+
+## AICodeRoom 更新记录
+
+### 2026-08-10
+
+- 将桌面端品牌、窗口、菜单和默认界面调整为 AICodeRoom，并以简体中文作为首次启动默认语言。
+- 完善 8 种界面语言：简体中文、英语、日语、韩语、西班牙语、法语、德语和巴西葡萄牙语。
+- 增加 GPT/Codex 与 Claude 多账号档案，可在“设置 → AI 账号”中分别添加、登录、停用和清除凭证。
+- 为 Codex 账号分配独立 `CODEX_HOME`、文件凭证和 OAuth 浏览器资料；Claude 凭证按档案分别保存在系统钥匙串。
+- 新任务在存在独立账号档案时必须选择账号，并在启动、恢复及 TUI/Chat 切换时继续使用同一档案。
+- 增加 Token 用量总览、会话用量与模型用量界面。
+- 取消 AICodeRoom 自身的账号密码登录页；开源桌面端默认本地运行，打开后直接进入项目。
+- 保留可选的 AICodeRoom Server 控制面；只有显式配置服务器地址时才启用云端项目、任务和备份元数据。
+- 保留 Agent Orchestrator 上游核心的项目、Git worktree、并行会话、终端、Chat、PR 和反馈循环能力。
+
+完整记录与安全边界见 [`CHANGELOG.md`](CHANGELOG.md) 和 [`docs/aicoderoom/ACCOUNT-ISOLATION.md`](docs/aicoderoom/ACCOUNT-ISOLATION.md)。
 
 <div align="center">
   <img src="assets/ao-logo.svg" alt="Agent Orchestrator" width="160" height="160" />

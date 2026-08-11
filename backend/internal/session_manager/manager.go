@@ -233,6 +233,7 @@ type Manager struct {
 	agents    ports.AgentResolver
 	workspace ports.Workspace
 	store     Store
+	accounts  AccountProfileResolver
 	// messenger is a sessionguard.Guard wrapping the raw messenger, so every
 	// pane write is guarded (re-read state, refuse a blocked session) without
 	// each call site re-deriving the check. Send/confirmActive use Deliver for
@@ -446,6 +447,9 @@ type Deps struct {
 	Agents    ports.AgentResolver
 	Workspace ports.Workspace
 	Store     Store
+	// Accounts resolves an isolated provider login into environment overrides.
+	// Nil preserves the provider's legacy/default credential store.
+	Accounts  AccountProfileResolver
 	Messenger ports.AgentMessenger
 	// Defaults supplies the daemon-owned default session interface for spawns that
 	// name no mode. Nil means always use the compatibility default.
@@ -485,6 +489,7 @@ func New(d Deps) *Manager {
 		agents:                 d.Agents,
 		workspace:              d.Workspace,
 		store:                  d.Store,
+		accounts:               d.Accounts,
 		defaults:               d.Defaults,
 		chat:                   d.Chat,
 		lcm:                    d.Lifecycle,
@@ -568,11 +573,15 @@ func (m *Manager) Spawn(ctx context.Context, cfg ports.SpawnConfig) (domain.Sess
 	// behind. It never falls back to TUI — that would put the user in a terminal
 	// they deliberately did not ask for.
 	mode := m.resolveSessionMode(ctx, cfg.RequestedMode)
+	accountEnv, err := m.resolveAccountProfile(ctx, cfg.AccountProfileID, cfg.Harness)
+	if err != nil {
+		return domain.SessionRecord{}, 0, 0, fmt.Errorf("spawn: account profile: %w", err)
+	}
 	if mode == domain.SessionModeChat {
 		if m.chat == nil {
 			return domain.SessionRecord{}, 0, 0, fmt.Errorf("spawn: %w: chat mode is not available in this build", ports.ErrChatUnsupported)
 		}
-		if err := m.chat.PreflightChat(ctx, cfg.Harness); err != nil {
+		if err := m.chat.PreflightChat(ctx, cfg.Harness, accountEnv); err != nil {
 			return domain.SessionRecord{}, 0, 0, fmt.Errorf("spawn: %w", err)
 		}
 	}
@@ -656,6 +665,7 @@ func (m *Manager) Spawn(ctx context.Context, cfg ports.SpawnConfig) (domain.Sess
 			workspaceProject: workspaceProject,
 			prompt:           prompt,
 			systemPrompt:     systemPrompt,
+			accountEnv:       accountEnv,
 		})
 		if err != nil {
 			return domain.SessionRecord{}, 0, 0, err
@@ -674,6 +684,7 @@ func (m *Manager) Spawn(ctx context.Context, cfg ports.SpawnConfig) (domain.Sess
 		m.rollbackSeedSpawnWorkspace(ctx, rec, ws, workspaceProject, true)
 		return domain.SessionRecord{}, 0, 0, fmt.Errorf("spawn %s: browser capability: %w", id, err)
 	}
+	applyEnvOverrides(env, accountEnv)
 	rec, err = m.persistBrowserCapabilityVerifier(ctx, rec, browserCapabilityVerifier)
 	if err != nil {
 		m.rollbackSeedSpawnWorkspace(ctx, rec, ws, workspaceProject, true)
@@ -1546,6 +1557,11 @@ func (m *Manager) relaunchSessionWithPolicy(ctx context.Context, operation strin
 	if err != nil {
 		return RestoreResult{}, fmt.Errorf("%s %s: browser capability: %w", operation, rec.ID, err)
 	}
+	accountEnv, err := m.resolveAccountProfile(ctx, rec.Metadata.AccountProfileID, rec.Harness)
+	if err != nil {
+		return RestoreResult{}, fmt.Errorf("%s %s: account profile: %w", operation, rec.ID, err)
+	}
+	applyEnvOverrides(env, accountEnv)
 	rec, err = m.persistBrowserCapabilityVerifier(ctx, rec, browserCapabilityVerifier)
 	if err != nil {
 		return RestoreResult{}, fmt.Errorf("%s %s: persist browser capability: %w", operation, rec.ID, err)
@@ -1600,6 +1616,7 @@ func (m *Manager) relaunchSessionWithPolicy(ctx context.Context, operation strin
 		return RestoreResult{}, fmt.Errorf("%s %s: runtime: %w", operation, rec.ID, err)
 	}
 	metadata := domain.SessionMetadata{
+		AccountProfileID:          rec.Metadata.AccountProfileID,
 		Branch:                    ws.Branch,
 		WorkspacePath:             ws.Path,
 		WorkspaceRepoPath:         ws.RepoPath,
@@ -2697,6 +2714,7 @@ func seedRecord(cfg ports.SpawnConfig, now time.Time) domain.SessionRecord {
 		Harness:     cfg.Harness,
 		DisplayName: cfg.DisplayName,
 		Activity:    domain.Activity{State: domain.ActivityIdle, LastActivityAt: now},
+		Metadata:    domain.SessionMetadata{AccountProfileID: cfg.AccountProfileID},
 		// Resolved before this point and persisted here. There is no UPDATE
 		// statement that can change it afterwards.
 		Mode: domain.NormalizeSessionMode(cfg.RequestedMode),
@@ -3292,7 +3310,7 @@ func (m *Manager) prepareWorkspace(ctx context.Context, agent ports.Agent, id do
 		return fmt.Errorf("install hooks: %w", err)
 	}
 	if pl, ok := agent.(preLauncher); ok {
-		if err := pl.PreLaunch(ctx, ports.LaunchConfig{DataDir: m.dataDir, SessionID: string(id), WorkspacePath: workspacePath}); err != nil {
+		if err := pl.PreLaunch(ctx, ports.LaunchConfig{DataDir: m.dataDir, Env: env, SessionID: string(id), WorkspacePath: workspacePath}); err != nil {
 			m.cleanupPreparedAgentWorkspace(ctx, agent, id, workspacePath, env)
 			return fmt.Errorf("pre-launch: %w", err)
 		}

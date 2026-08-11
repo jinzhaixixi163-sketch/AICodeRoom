@@ -37,3 +37,18 @@ func TestMergeInheritsDaemonEnvironmentAndAppliesOverlay(t *testing.T) {
 		t.Fatalf("missing environment values: %v", want)
 	}
 }
+
+func TestMergeCanBlankAmbientProviderCredential(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "ambient-secret-must-not-survive")
+
+	got := Merge(map[string]string{"OPENAI_API_KEY": ""})
+	for _, entry := range got {
+		if entry == "OPENAI_API_KEY=ambient-secret-must-not-survive" {
+			t.Fatal("ambient provider credential survived the session overlay")
+		}
+		if entry == "OPENAI_API_KEY=" {
+			return
+		}
+	}
+	t.Fatal("credential scrub overlay was missing from child environment")
+}
